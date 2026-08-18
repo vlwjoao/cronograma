@@ -734,23 +734,33 @@
         });
 
         function initializeGoogleAuth() {
-            // Criar token client
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: handleCredentialResponse,
-            });
-
-            // Carregar token armazenado se existir
-            const storedToken = localStorage.getItem('googleToken');
-            if (storedToken) {
-                // Token foi armazenado, tentar usar
-                gapi.load('client', {
-                    onload: () => {
-                        initializeGoogleAPI();
-                    }
+            try {
+                // Criar token client
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: handleCredentialResponse,
+                    error_callback: handleAuthError,
                 });
+
+                // Carregar token armazenado se existir
+                const storedToken = localStorage.getItem('googleToken');
+                if (storedToken) {
+                    // Token foi armazenado, tentar usar
+                    gapi.load('client', {
+                        onload: () => {
+                            initializeGoogleAPI();
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Erro ao inicializar auth:', e);
             }
+        }
+
+        function handleAuthError(error) {
+            console.error('Erro de autenticação:', error);
+            updateSyncStatus('error', '❌ Erro: ' + error.error);
         }
 
         function handleCredentialResponse(response) {
@@ -772,12 +782,9 @@
                 return;
             }
 
-            gapi.client.setApiKey('');
-            gapi.client.load('calendar', 'v3', function() {
-                gapi.client.setToken({ access_token: token });
-                isAuthenticated = true;
-                updateAuthUI();
-            });
+            // Não precisa carregar gapi.client, vamos usar fetch direto
+            isAuthenticated = true;
+            updateAuthUI();
         }
 
         function updateAuthUI() {
@@ -808,6 +815,7 @@
             updateSyncStatus('syncing', '🔄 Sincronizando...');
 
             try {
+                const token = localStorage.getItem('googleToken');
                 const activities = getAllActivitiesFromSchedule();
 
                 for (let activity of activities) {
@@ -816,20 +824,43 @@
 
                     try {
                         // Tentar atualizar evento existente
-                        await gapi.client.calendar.events.update({
-                            'calendarId': CALENDAR_ID,
-                            'eventId': eventId,
-                            'resource': event,
-                        });
-                    } catch (err) {
-                        if (err.status === 404) {
-                            // Evento não existe, criar novo
-                            event.id = eventId;
-                            await gapi.client.calendar.events.insert({
-                                'calendarId': CALENDAR_ID,
-                                'resource': event,
-                            });
+                        const updateResponse = await fetch(
+                            `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
+                            {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(event)
+                            }
+                        );
+
+                        if (!updateResponse.ok && updateResponse.status !== 404) {
+                            throw new Error(`Erro ao atualizar evento: ${updateResponse.status}`);
                         }
+
+                        // Se 404, criar novo evento
+                        if (updateResponse.status === 404) {
+                            event.id = eventId;
+                            const insertResponse = await fetch(
+                                'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(event)
+                                }
+                            );
+
+                            if (!insertResponse.ok) {
+                                throw new Error(`Erro ao criar evento: ${insertResponse.status}`);
+                            }
+                        }
+                    } catch (err) {
+                        console.error(`Erro ao sincronizar atividade ${activity.activity}:`, err);
                     }
                 }
 
@@ -837,7 +868,7 @@
                 setTimeout(() => updateSyncStatus('synced', '✅ Sincronizado'), 2000);
             } catch (error) {
                 console.error('Erro na sincronização:', error);
-                updateSyncStatus('error', '❌ Erro');
+                updateSyncStatus('error', '❌ Erro: ' + error.message);
             }
         }
 
