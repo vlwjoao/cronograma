@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronograma Semanal + Google Calendar</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .google-auth {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .auth-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: white;
+            color: #667eea;
+        }
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .sync-status {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .sync-status.synced {
+            background: #10b981;
+            color: white;
+        }
+        .sync-status.syncing {
+            background: #f59e0b;
+            color: white;
+        }
+        .sync-status.error {
+            background: #ef4444;
+            color: white;
+        }
+        .sync-status.disconnected {
+            background: #6b7280;
+            color: white;
+        }
+        .user-info {
+            text-align: center;
+            padding: 10px;
+            color: white;
+            font-size: 14px;
+        }
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-btn:hover {
+            background: #efefef;
+            color: #333;
+        }
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .content {
+            padding: 30px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th {
+            background: #f0f0f0;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f9f9f9;
+        }
+        .time {
+            color: #667eea;
+            font-weight: 600;
+            min-width: 80px;
+            cursor: pointer;
+        }
+        .time:hover {
+            text-decoration: underline;
+        }
+        .edit-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 4px 8px;
+            margin-left: 10px;
+        }
+        .edit-btn:hover {
+            color: #5568d3;
+        }
+        tr:hover .edit-btn {
+            opacity: 1;
+        }
+        .sync-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .sync-indicator.synced {
+            background: #10b981;
+        }
+        .sync-indicator.pending {
+            background: #f59e0b;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+        .modal-header h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .modal-header p {
+            color: #999;
+            font-size: 13px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .form-group textarea,
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+        .form-group textarea {
+            min-height: 100px;
+        }
+        .form-group textarea:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .setup-guide {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .setup-guide h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .setup-guide code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Cronograma Semanal + Google Calendar</h1>
+            <p>Sincronização automática com sua agenda Google</p>
+            
+            <div class="google-auth">
+                <button class="auth-btn" id="authBtn" onclick="handleAuthClick()">🔐 Conectar Google</button>
+                <button class="auth-btn" style="display:none;" id="signoutBtn" onclick="handleSignoutClick()">Desconectar</button>
+                <button class="auth-btn" onclick="syncNow()">🔄 Sincronizar Agora</button>
+                <span class="sync-status disconnected" id="syncStatus">⚪ Desconectado</span>
+            </div>
+            
+            <div class="user-info" id="userInfo" style="display:none;">
+                👤 Conectado como: <span id="userName"></span>
+            </div>
+
+            <div class="setup-guide" id="setupGuide">
+                <h3>⚙️ Configuração Necessária:</h3>
+                <p>1. Clique em <strong>"🔐 Conectar Google"</strong> para autenticar</p>
+                <p>2. Permita acesso ao Google Calendar</p>
+                <p>3. Suas atividades serão sincronizadas automaticamente!</p>
+                <p style="margin-top: 10px; color: #666; font-size: 12px;">
+                    ℹ️ Nota: Esta é uma versão de demonstração. Para funcionar completamente, 
+                    você precisa adicionar seu <code>CLIENT_ID</code> do Google Cloud Console.
+                </p>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('segunda')">Seg</button>
+            <button class="tab-btn" onclick="switchTab('terca')">Ter</button>
+            <button class="tab-btn" onclick="switchTab('quarta')">Qua</button>
+            <button class="tab-btn" onclick="switchTab('quinta')">Qui</button>
+            <button class="tab-btn" onclick="switchTab('sexta')">Sex</button>
+            <button class="tab-btn" onclick="switchTab('sabado')">Sab</button>
+            <button class="tab-btn" onclick="switchTab('domingo')">Dom</button>
+        </div>
+
+        <div class="content">
+            <!-- SEGUNDA -->
+            <div id="segunda" class="tab-content active">
+                <table id="segunda-table">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Atividade</th>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '08:00')">08:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '08:00', 'Acordar, banho e escovar os dentes')"><span class="sync-indicator synced"></span>Acordar, banho e escovar os dentes <button class="edit-btn" onclick="openEditModal('segunda', '08:00', 'Acordar, banho e escovar os dentes', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '08:30')">08:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '08:30', 'Ioga e meditação')"><span class="sync-indicator synced"></span>Ioga e meditação <button class="edit-btn" onclick="openEditModal('segunda', '08:30', 'Ioga e meditação', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '09:30')">09:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '09:30', 'Café da manhã (colocar comida para descongelar)')"><span class="sync-indicator synced"></span>Café da manhã (colocar comida para descongelar) <button class="edit-btn" onclick="openEditModal('segunda', '09:30', 'Café da manhã (colocar comida para descongelar)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '09:40')">09:40</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '09:40', '🧺 Colocar roupas na máquina (Tarefa do dia)')"><span class="sync-indicator synced"></span>🧺 Colocar roupas na máquina (Tarefa do dia) <button class="edit-btn" onclick="openEditModal('segunda', '09:40', '🧺 Colocar roupas na máquina (Tarefa do dia)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '10:15')">10:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '10:15', 'Busca por emprego / Atualização de currículo')"><span class="sync-indicator synced"></span>Busca por emprego / Atualização de currículo <button class="edit-btn" onclick="openEditModal('segunda', '10:15', 'Busca por emprego / Atualização de currículo', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '12:15')">12:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '12:15', 'Almoço')"><span class="sync-indicator synced"></span>Almoço <button class="edit-btn" onclick="openEditModal('segunda', '12:15', 'Almoço', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '14:00')">14:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '14:00', 'Limpeza diária da caixa de areia')"><span class="sync-indicator synced"></span>Limpeza diária da caixa de areia <button class="edit-btn" onclick="openEditModal('segunda', '14:00', 'Limpeza diária da caixa de areia', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '16:00')">16:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '16:00', 'Exercício físico')"><span class="sync-indicator synced"></span>Exercício físico <button class="edit-btn" onclick="openEditModal('segunda', '16:00', 'Exercício físico', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '17:00')">17:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '17:00', 'Estudos')"><span class="sync-indicator synced"></span>Estudos <button class="edit-btn" onclick="openEditModal('segunda', '17:00', 'Estudos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '18:45')">18:45</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '18:45', '🧺 Transferir roupas + pendurar')"><span class="sync-indicator synced"></span>🧺 Transferir roupas + pendurar <button class="edit-btn" onclick="openEditModal('segunda', '18:45', '🧺 Transferir roupas + pendurar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '19:00')">19:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '19:00', 'Jantar')"><span class="sync-indicator synced"></span>Jantar <button class="edit-btn" onclick="openEditModal('segunda', '19:00', 'Jantar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '20:00')">20:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '20:00', 'Leitura')"><span class="sync-indicator synced"></span>Leitura <button class="edit-btn" onclick="openEditModal('segunda', '20:00', 'Leitura', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '20:30')">20:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '20:30', 'Lazer')"><span class="sync-indicator synced"></span>Lazer <button class="edit-btn" onclick="openEditModal('segunda', '20:30', 'Lazer', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('segunda', this, '21:30')">21:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('segunda', '21:30', 'Arrumação do espaço para o dia seguinte')"><span class="sync-indicator synced"></span>Arrumação do espaço para o dia seguinte <button class="edit-btn" onclick="openEditModal('segunda', '21:30', 'Arrumação do espaço para o dia seguinte', event)">✏️</button></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- TERÇA -->
+            <div id="terca" class="tab-content">
+                <table id="terca-table">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Atividade</th>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '08:00')">08:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '08:00', 'Acordar, banho e escovar os dentes')"><span class="sync-indicator synced"></span>Acordar, banho e escovar os dentes <button class="edit-btn" onclick="openEditModal('terca', '08:00', 'Acordar, banho e escovar os dentes', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '08:30')">08:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '08:30', 'Ioga e meditação')"><span class="sync-indicator synced"></span>Ioga e meditação <button class="edit-btn" onclick="openEditModal('terca', '08:30', 'Ioga e meditação', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '09:30')">09:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '09:30', 'Café da manhã (colocar comida para descongelar)')"><span class="sync-indicator synced"></span>Café da manhã (colocar comida para descongelar) <button class="edit-btn" onclick="openEditModal('terca', '09:30', 'Café da manhã (colocar comida para descongelar)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '09:40')">09:40</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '09:40', '🧼 Colocar toalhas e tapetinhos na máquina (Tarefa do dia)')"><span class="sync-indicator synced"></span>🧼 Colocar toalhas e tapetinhos na máquina (Tarefa do dia) <button class="edit-btn" onclick="openEditModal('terca', '09:40', '🧼 Colocar toalhas e tapetinhos na máquina (Tarefa do dia)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '10:15')">10:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '10:15', 'Busca por emprego / Atualização de currículo')"><span class="sync-indicator synced"></span>Busca por emprego / Atualização de currículo <button class="edit-btn" onclick="openEditModal('terca', '10:15', 'Busca por emprego / Atualização de currículo', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '12:15')">12:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '12:15', 'Almoço')"><span class="sync-indicator synced"></span>Almoço <button class="edit-btn" onclick="openEditModal('terca', '12:15', 'Almoço', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '14:00')">14:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '14:00', 'Limpeza diária da caixa de areia')"><span class="sync-indicator synced"></span>Limpeza diária da caixa de areia <button class="edit-btn" onclick="openEditModal('terca', '14:00', 'Limpeza diária da caixa de areia', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '16:00')">16:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '16:00', 'Exercício físico')"><span class="sync-indicator synced"></span>Exercício físico <button class="edit-btn" onclick="openEditModal('terca', '16:00', 'Exercício físico', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '17:00')">17:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '17:00', 'Estudos')"><span class="sync-indicator synced"></span>Estudos <button class="edit-btn" onclick="openEditModal('terca', '17:00', 'Estudos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '18:45')">18:45</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '18:45', '🧼 Pendurar toalhas e tapetinhos')"><span class="sync-indicator synced"></span>🧼 Pendurar toalhas e tapetinhos <button class="edit-btn" onclick="openEditModal('terca', '18:45', '🧼 Pendurar toalhas e tapetinhos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '19:00')">19:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '19:00', 'Jantar')"><span class="sync-indicator synced"></span>Jantar <button class="edit-btn" onclick="openEditModal('terca', '19:00', 'Jantar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '20:00')">20:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '20:00', 'Leitura')"><span class="sync-indicator synced"></span>Leitura <button class="edit-btn" onclick="openEditModal('terca', '20:00', 'Leitura', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '20:30')">20:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '20:30', 'Lazer')"><span class="sync-indicator synced"></span>Lazer <button class="edit-btn" onclick="openEditModal('terca', '20:30', 'Lazer', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('terca', this, '21:30')">21:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('terca', '21:30', 'Arrumação do espaço para o dia seguinte')"><span class="sync-indicator synced"></span>Arrumação do espaço para o dia seguinte <button class="edit-btn" onclick="openEditModal('terca', '21:30', 'Arrumação do espaço para o dia seguinte', event)">✏️</button></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- QUARTA -->
+            <div id="quarta" class="tab-content">
+                <table id="quarta-table">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Atividade</th>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '08:00')">08:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '08:00', 'Acordar, banho e escovar os dentes')"><span class="sync-indicator synced"></span>Acordar, banho e escovar os dentes <button class="edit-btn" onclick="openEditModal('quarta', '08:00', 'Acordar, banho e escovar os dentes', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '08:30')">08:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '08:30', 'Ioga e meditação')"><span class="sync-indicator synced"></span>Ioga e meditação <button class="edit-btn" onclick="openEditModal('quarta', '08:30', 'Ioga e meditação', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '09:30')">09:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '09:30', 'Café da manhã (colocar comida para descongelar)')"><span class="sync-indicator synced"></span>Café da manhã (colocar comida para descongelar) <button class="edit-btn" onclick="openEditModal('quarta', '09:30', 'Café da manhã (colocar comida para descongelar)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '10:15')">10:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '10:15', 'Busca por emprego / Atualização de currículo')"><span class="sync-indicator synced"></span>Busca por emprego / Atualização de currículo <button class="edit-btn" onclick="openEditModal('quarta', '10:15', 'Busca por emprego / Atualização de currículo', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '12:15')">12:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '12:15', 'Almoço')"><span class="sync-indicator synced"></span>Almoço <button class="edit-btn" onclick="openEditModal('quarta', '12:15', 'Almoço', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '14:00')">14:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '14:00', 'Limpeza diária da caixa de areia')"><span class="sync-indicator synced"></span>Limpeza diária da caixa de areia <button class="edit-btn" onclick="openEditModal('quarta', '14:00', 'Limpeza diária da caixa de areia', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '15:00')">15:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '15:00', '🧹 Limpeza completa do piso (cozinha + área de serviço)')"><span class="sync-indicator synced"></span>🧹 Limpeza completa do piso (cozinha + área de serviço) <button class="edit-btn" onclick="openEditModal('quarta', '15:00', '🧹 Limpeza completa do piso (cozinha + área de serviço)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '16:00')">16:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '16:00', '🐱 Troca completa da areia dos gatos')"><span class="sync-indicator synced"></span>🐱 Troca completa da areia dos gatos <button class="edit-btn" onclick="openEditModal('quarta', '16:00', '🐱 Troca completa da areia dos gatos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '16:45')">16:45</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '16:45', 'Exercício físico')"><span class="sync-indicator synced"></span>Exercício físico <button class="edit-btn" onclick="openEditModal('quarta', '16:45', 'Exercício físico', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '17:00')">17:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '17:00', 'Estudos')"><span class="sync-indicator synced"></span>Estudos <button class="edit-btn" onclick="openEditModal('quarta', '17:00', 'Estudos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '19:00')">19:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '19:00', 'Jantar')"><span class="sync-indicator synced"></span>Jantar <button class="edit-btn" onclick="openEditModal('quarta', '19:00', 'Jantar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '20:00')">20:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '20:00', 'Leitura')"><span class="sync-indicator synced"></span>Leitura <button class="edit-btn" onclick="openEditModal('quarta', '20:00', 'Leitura', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '20:30')">20:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '20:30', 'Lazer')"><span class="sync-indicator synced"></span>Lazer <button class="edit-btn" onclick="openEditModal('quarta', '20:30', 'Lazer', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quarta', this, '21:30')">21:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quarta', '21:30', 'Arrumação do espaço para o dia seguinte')"><span class="sync-indicator synced"></span>Arrumação do espaço para o dia seguinte <button class="edit-btn" onclick="openEditModal('quarta', '21:30', 'Arrumação do espaço para o dia seguinte', event)">✏️</button></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- QUINTA -->
+            <div id="quinta" class="tab-content">
+                <table id="quinta-table">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Atividade</th>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '08:00')">08:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '08:00', 'Acordar, banho e escovar os dentes')"><span class="sync-indicator synced"></span>Acordar, banho e escovar os dentes <button class="edit-btn" onclick="openEditModal('quinta', '08:00', 'Acordar, banho e escovar os dentes', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '08:30')">08:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '08:30', 'Ioga e meditação')"><span class="sync-indicator synced"></span>Ioga e meditação <button class="edit-btn" onclick="openEditModal('quinta', '08:30', 'Ioga e meditação', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '09:30')">09:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '09:30', 'Café da manhã (colocar comida para descongelar)')"><span class="sync-indicator synced"></span>Café da manhã (colocar comida para descongelar) <button class="edit-btn" onclick="openEditModal('quinta', '09:30', 'Café da manhã (colocar comida para descongelar)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '09:40')">09:40</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '09:40', '🧺 Colocar roupas na máquina (Tarefa do dia)')"><span class="sync-indicator synced"></span>🧺 Colocar roupas na máquina (Tarefa do dia) <button class="edit-btn" onclick="openEditModal('quinta', '09:40', '🧺 Colocar roupas na máquina (Tarefa do dia)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '10:15')">10:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '10:15', 'Busca por emprego / Atualização de currículo')"><span class="sync-indicator synced"></span>Busca por emprego / Atualização de currículo <button class="edit-btn" onclick="openEditModal('quinta', '10:15', 'Busca por emprego / Atualização de currículo', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '12:15')">12:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '12:15', 'Almoço')"><span class="sync-indicator synced"></span>Almoço <button class="edit-btn" onclick="openEditModal('quinta', '12:15', 'Almoço', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '14:00')">14:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '14:00', 'Limpeza diária da caixa de areia')"><span class="sync-indicator synced"></span>Limpeza diária da caixa de areia <button class="edit-btn" onclick="openEditModal('quinta', '14:00', 'Limpeza diária da caixa de areia', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '16:00')">16:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '16:00', 'Exercício físico')"><span class="sync-indicator synced"></span>Exercício físico <button class="edit-btn" onclick="openEditModal('quinta', '16:00', 'Exercício físico', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '17:00')">17:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '17:00', 'Estudos')"><span class="sync-indicator synced"></span>Estudos <button class="edit-btn" onclick="openEditModal('quinta', '17:00', 'Estudos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '18:45')">18:45</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '18:45', '🧺 Transferir roupas + pendurar')"><span class="sync-indicator synced"></span>🧺 Transferir roupas + pendurar <button class="edit-btn" onclick="openEditModal('quinta', '18:45', '🧺 Transferir roupas + pendurar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '19:00')">19:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '19:00', 'Jantar')"><span class="sync-indicator synced"></span>Jantar <button class="edit-btn" onclick="openEditModal('quinta', '19:00', 'Jantar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '20:00')">20:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '20:00', 'Leitura')"><span class="sync-indicator synced"></span>Leitura <button class="edit-btn" onclick="openEditModal('quinta', '20:00', 'Leitura', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '20:30')">20:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '20:30', 'Lazer')"><span class="sync-indicator synced"></span>Lazer <button class="edit-btn" onclick="openEditModal('quinta', '20:30', 'Lazer', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('quinta', this, '21:30')">21:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('quinta', '21:30', 'Arrumação do espaço para o dia seguinte')"><span class="sync-indicator synced"></span>Arrumação do espaço para o dia seguinte <button class="edit-btn" onclick="openEditModal('quinta', '21:30', 'Arrumação do espaço para o dia seguinte', event)">✏️</button></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- SEXTA -->
+            <div id="sexta" class="tab-content">
+                <table id="sexta-table">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Atividade</th>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '08:00')">08:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '08:00', 'Acordar, banho e escovar os dentes')"><span class="sync-indicator synced"></span>Acordar, banho e escovar os dentes <button class="edit-btn" onclick="openEditModal('sexta', '08:00', 'Acordar, banho e escovar os dentes', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '08:30')">08:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '08:30', 'Ioga e meditação')"><span class="sync-indicator synced"></span>Ioga e meditação <button class="edit-btn" onclick="openEditModal('sexta', '08:30', 'Ioga e meditação', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '09:30')">09:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '09:30', 'Café da manhã (colocar comida para descongelar)')"><span class="sync-indicator synced"></span>Café da manhã (colocar comida para descongelar) <button class="edit-btn" onclick="openEditModal('sexta', '09:30', 'Café da manhã (colocar comida para descongelar)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '10:15')">10:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '10:15', 'Busca por emprego / Atualização de currículo')"><span class="sync-indicator synced"></span>Busca por emprego / Atualização de currículo <button class="edit-btn" onclick="openEditModal('sexta', '10:15', 'Busca por emprego / Atualização de currículo', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '12:15')">12:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '12:15', 'Almoço')"><span class="sync-indicator synced"></span>Almoço <button class="edit-btn" onclick="openEditModal('sexta', '12:15', 'Almoço', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '14:00')">14:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '14:00', 'Limpeza diária da caixa de areia')"><span class="sync-indicator synced"></span>Limpeza diária da caixa de areia <button class="edit-btn" onclick="openEditModal('sexta', '14:00', 'Limpeza diária da caixa de areia', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '15:00')">15:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '15:00', '🛏️ Organização do quarto')"><span class="sync-indicator synced"></span>🛏️ Organização do quarto <button class="edit-btn" onclick="openEditModal('sexta', '15:00', '🛏️ Organização do quarto', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '16:00')">16:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '16:00', '🌿 Limpeza da varanda')"><span class="sync-indicator synced"></span>🌿 Limpeza da varanda <button class="edit-btn" onclick="openEditModal('sexta', '16:00', '🌿 Limpeza da varanda', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '16:45')">16:45</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '16:45', 'Exercício físico')"><span class="sync-indicator synced"></span>Exercício físico <button class="edit-btn" onclick="openEditModal('sexta', '16:45', 'Exercício físico', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '17:00')">17:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '17:00', 'Estudos')"><span class="sync-indicator synced"></span>Estudos <button class="edit-btn" onclick="openEditModal('sexta', '17:00', 'Estudos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '19:00')">19:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '19:00', 'Jantar')"><span class="sync-indicator synced"></span>Jantar <button class="edit-btn" onclick="openEditModal('sexta', '19:00', 'Jantar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '20:00')">20:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '20:00', 'Leitura')"><span class="sync-indicator synced"></span>Leitura <button class="edit-btn" onclick="openEditModal('sexta', '20:00', 'Leitura', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '20:30')">20:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '20:30', 'Lazer')"><span class="sync-indicator synced"></span>Lazer <button class="edit-btn" onclick="openEditModal('sexta', '20:30', 'Lazer', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sexta', this, '21:30')">21:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sexta', '21:30', 'Arrumação do espaço para o dia seguinte')"><span class="sync-indicator synced"></span>Arrumação do espaço para o dia seguinte <button class="edit-btn" onclick="openEditModal('sexta', '21:30', 'Arrumação do espaço para o dia seguinte', event)">✏️</button></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- SÁBADO -->
+            <div id="sabado" class="tab-content">
+                <table id="sabado-table">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Atividade</th>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '08:00')">08:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '08:00', 'Acordar, banho e escovar os dentes')"><span class="sync-indicator synced"></span>Acordar, banho e escovar os dentes <button class="edit-btn" onclick="openEditModal('sabado', '08:00', 'Acordar, banho e escovar os dentes', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '08:30')">08:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '08:30', 'Ioga e meditação')"><span class="sync-indicator synced"></span>Ioga e meditação <button class="edit-btn" onclick="openEditModal('sabado', '08:30', 'Ioga e meditação', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '09:30')">09:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '09:30', 'Café da manhã (colocar comida para descongelar)')"><span class="sync-indicator synced"></span>Café da manhã (colocar comida para descongelar) <button class="edit-btn" onclick="openEditModal('sabado', '09:30', 'Café da manhã (colocar comida para descongelar)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '10:15')">10:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '10:15', 'Busca por emprego / Atualização de currículo')"><span class="sync-indicator synced"></span>Busca por emprego / Atualização de currículo <button class="edit-btn" onclick="openEditModal('sabado', '10:15', 'Busca por emprego / Atualização de currículo', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '12:15')">12:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '12:15', 'Almoço')"><span class="sync-indicator synced"></span>Almoço <button class="edit-btn" onclick="openEditModal('sabado', '12:15', 'Almoço', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '13:00')">13:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '13:00', '🚿 Faxina pesada do banheiro')"><span class="sync-indicator synced"></span>🚿 Faxina pesada do banheiro <button class="edit-btn" onclick="openEditModal('sabado', '13:00', '🚿 Faxina pesada do banheiro', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '14:30')">14:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '14:30', '🐱 Limpeza do quartinho dos gatos')"><span class="sync-indicator synced"></span>🐱 Limpeza do quartinho dos gatos <button class="edit-btn" onclick="openEditModal('sabado', '14:30', '🐱 Limpeza do quartinho dos gatos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '15:15')">15:15</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '15:15', '🧺 Lavar roupa de cama e tapete do quarto (quinzenal)')"><span class="sync-indicator synced"></span>🧺 Lavar roupa de cama e tapete do quarto (quinzenal) <button class="edit-btn" onclick="openEditModal('sabado', '15:15', '🧺 Lavar roupa de cama e tapete do quarto (quinzenal)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '16:00')">16:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '16:00', 'Exercício físico')"><span class="sync-indicator synced"></span>Exercício físico <button class="edit-btn" onclick="openEditModal('sabado', '16:00', 'Exercício físico', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '17:00')">17:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '17:00', 'Estudos')"><span class="sync-indicator synced"></span>Estudos <button class="edit-btn" onclick="openEditModal('sabado', '17:00', 'Estudos', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '19:00')">19:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '19:00', 'Jantar')"><span class="sync-indicator synced"></span>Jantar <button class="edit-btn" onclick="openEditModal('sabado', '19:00', 'Jantar', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '20:00')">20:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '20:00', 'Leitura')"><span class="sync-indicator synced"></span>Leitura <button class="edit-btn" onclick="openEditModal('sabado', '20:00', 'Leitura', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '20:30')">20:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '20:30', 'Lazer')"><span class="sync-indicator synced"></span>Lazer <button class="edit-btn" onclick="openEditModal('sabado', '20:30', 'Lazer', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('sabado', this, '21:30')">21:30</td>
+                        <td class="activity-cell" onclick="openNoteModal('sabado', '21:30', 'Arrumação do espaço para o dia seguinte')"><span class="sync-indicator synced"></span>Arrumação do espaço para o dia seguinte <button class="edit-btn" onclick="openEditModal('sabado', '21:30', 'Arrumação do espaço para o dia seguinte', event)">✏️</button></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- DOMINGO -->
+            <div id="domingo" class="tab-content">
+                <table id="domingo-table">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Atividade</th>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('domingo', this, '09:00')">09:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('domingo', '09:00', '🍳 Preparo das refeições da semana (arroz, feijão, frango)')"><span class="sync-indicator synced"></span>🍳 Preparo das refeições da semana (arroz, feijão, frango) <button class="edit-btn" onclick="openEditModal('domingo', '09:00', '🍳 Preparo das refeições da semana (arroz, feijão, frango)', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('domingo', this, '12:00')">12:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('domingo', '12:00', 'Congelamento das refeições')"><span class="sync-indicator synced"></span>Congelamento das refeições <button class="edit-btn" onclick="openEditModal('domingo', '12:00', 'Congelamento das refeições', event)">✏️</button></td>
+                    </tr>
+                    <tr>
+                        <td class="time" onclick="editTime('domingo', this, '14:00')">14:00</td>
+                        <td class="activity-cell" onclick="openNoteModal('domingo', '14:00', 'Resto do dia livre')"><span class="sync-indicator synced"></span>Resto do dia livre <button class="edit-btn" onclick="openEditModal('domingo', '14:00', 'Resto do dia livre', event)">✏️</button></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Notas e Edição -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalActivityTitle">Atividade</h2>
+                <p>⏰ <span id="modalActivityTime">08:00</span></p>
+            </div>
+            <div class="form-group">
+                <label for="noteText" id="noteLabel">📝 Anotações importantes:</label>
+                <textarea id="noteText" placeholder="Adicione informações extras que não podem faltar..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveContent()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ CONFIGURAÇÃO GOOGLE CALENDAR ============
+        const CLIENT_ID = '405103894296-2k2m8ubjs2cps4umdqohmq36ij1qr2p7.apps.googleusercontent.com';
+        const CALENDAR_ID = 'primary';
+        const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+        
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let isAuthenticated = false;
+
+        // Inicializar Google API
+        function initializeGoogleAPI() {
+            gapi.load('client', async () => {
+                await gapi.client.init({
+                    apiKey: CLIENT_ID,
+                    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+                });
+                gapiInited = true;
+                updateSigninStatus();
+            });
+
+            window.google.accounts.id.initialize({
+                client_id: CLIENT_ID,
+                callback: handleCredentialResponse,
+            });
+
+            gis.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES.join(' '),
+                callback: (tokenResponse) => {
+                    gapi.client.setToken(tokenResponse);
+                    isAuthenticated = true;
+                    updateSigninStatus();
+                    syncWithGoogleCalendar();
+                },
+            });
+        }
+
+        function handleCredentialResponse(response) {
+            gapi.client.setToken({access_token: response.credential});
+            isAuthenticated = true;
+            updateSigninStatus();
+            syncWithGoogleCalendar();
+        }
+
+        function handleAuthClick() {
+            if (isAuthenticated) {
+                syncWithGoogleCalendar();
+            } else if (gapiInited) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            }
+        }
+
+        function handleSignoutClick() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken(null);
+                isAuthenticated = false;
+                updateSigninStatus();
+                updateSyncStatus('disconnected', '⚪ Desconectado');
+            }
+        }
+
+        function updateSigninStatus() {
+            if (isAuthenticated) {
+                document.getElementById('authBtn').style.display = 'none';
+                document.getElementById('signoutBtn').style.display = 'inline-block';
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('setupGuide').style.display = 'none';
+                document.getElementById('userName').textContent = 'Usuário Google';
+                updateSyncStatus('synced', '✅ Conectado');
+            } else {
+                document.getElementById('authBtn').style.display = 'inline-block';
+                document.getElementById('signoutBtn').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('setupGuide').style.display = 'block';
+                updateSyncStatus('disconnected', '⚪ Desconectado');
+            }
+        }
+
+        function updateSyncStatus(status, text) {
+            const statusElement = document.getElementById('syncStatus');
+            statusElement.className = `sync-status ${status}`;
+            statusElement.textContent = text;
+        }
+
+        async function syncWithGoogleCalendar() {
+            if (!isAuthenticated) return;
+
+            updateSyncStatus('syncing', '⏳ Sincronizando...');
+
+            try {
+                // Buscar eventos existentes
+                const response = await gapi.client.calendar.events.list({
+                    'calendarId': CALENDAR_ID,
+                    'timeMin': new Date().toISOString(),
+                    'maxResults': 250,
+                    'singleEvents': true,
+                    'orderBy': 'startTime',
+                });
+
+                const existingEvents = response.result.items || [];
+                const allActivities = getAllActivitiesFromSchedule();
+
+                // Sincronizar atividades com Google Calendar
+                for (const activity of allActivities) {
+                    const eventId = `cronograma-${activity.day}-${activity.time}`.replace(/:/g, '-');
+                    const existingEvent = existingEvents.find(e => e.id === eventId);
+
+                    const event = createCalendarEvent(activity);
+
+                    if (existingEvent) {
+                        // Atualizar evento existente
+                        await gapi.client.calendar.events.update({
+                            'calendarId': CALENDAR_ID,
+                            'eventId': eventId,
+                            'resource': event,
+                        });
+                    } else {
+                        // Criar novo evento
+                        event.id = eventId;
+                        await gapi.client.calendar.events.insert({
+                            'calendarId': CALENDAR_ID,
+                            'resource': event,
+                        });
+                    }
+                }
+
+                updateSyncStatus('synced', '✅ Sincronizado');
+                setTimeout(() => updateSyncStatus('synced', '✅ Sincronizado'), 2000);
+            } catch (error) {
+                console.error('Erro na sincronização:', error);
+                updateSyncStatus('error', '❌ Erro');
+            }
+        }
+
+        function syncNow() {
+            if (isAuthenticated) {
+                syncWithGoogleCalendar();
+            } else {
+                alert('Conecte sua conta Google primeiro!');
+            }
+        }
+
+        function getAllActivitiesFromSchedule() {
+            const activities = [];
+            const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+            
+            days.forEach(day => {
+                const table = document.getElementById(`${day}-table`);
+                const rows = table.querySelectorAll('tr');
+                
+                rows.forEach((row, index) => {
+                    if (index === 0) return; // Skip header
+                    
+                    const timeCell = row.querySelector('.time');
+                    const activityCell = row.querySelector('.activity-cell');
+                    
+                    if (timeCell && activityCell) {
+                        activities.push({
+                            day: day,
+                            time: timeCell.textContent.trim(),
+                            activity: activityCell.textContent.replace(/[✏️⚪]/g, '').trim()
+                        });
+                    }
+                });
+            });
+            
+            return activities;
+        }
+
+        function createCalendarEvent(activity) {
+            const [hour, minute] = activity.time.split(':');
+            const date = getDateForDay(activity.day);
+            
+            return {
+                'summary': activity.activity,
+                'description': `Atividade do cronograma: ${activity.activity}`,
+                'start': {
+                    'dateTime': new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute).toISOString(),
+                    'timeZone': 'America/Sao_Paulo',
+                },
+                'end': {
+                    'dateTime': new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(hour) + 1, minute).toISOString(),
+                    'timeZone': 'America/Sao_Paulo',
+                },
+            };
+        }
+
+        function getDateForDay(day) {
+            const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+            const dayIndex = days.indexOf(day);
+            const today = new Date();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+            const date = new Date(monday);
+            date.setDate(monday.getDate() + dayIndex);
+            return date;
+        }
+
+        // ============ FUNÇÕES DO CRONOGRAMA ============
+        const notes = JSON.parse(localStorage.getItem('cronogramaNotes')) || {};
+
+        function switchTab(day) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(day).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function createActivityKey(day, time, activity) {
+            return `${day}-${time}-${activity.substring(0, 20)}`;
+        }
+
+        function openNoteModal(day, time, activity) {
+            const key = createActivityKey(day, time, activity);
+            const modal = document.getElementById('noteModal');
+            const textarea = document.getElementById('noteText');
+            const title = document.getElementById('modalActivityTitle');
+            const timeDisplay = document.getElementById('modalActivityTime');
+            const label = document.getElementById('noteLabel');
+            
+            title.textContent = activity;
+            timeDisplay.textContent = time;
+            label.textContent = '📝 Anotações importantes:';
+            textarea.value = notes[key] || '';
+            textarea.placeholder = 'Adicione informações extras que não podem faltar...';
+            
+            modal.dataset.key = key;
+            modal.dataset.mode = 'note';
+            modal.classList.add('show');
+        }
+
+        function openEditModal(day, time, activity, event) {
+            event.stopPropagation();
+            const modal = document.getElementById('noteModal');
+            const textarea = document.getElementById('noteText');
+            const title = document.getElementById('modalActivityTitle');
+            const timeDisplay = document.getElementById('modalActivityTime');
+            const label = document.getElementById('noteLabel');
+            
+            title.textContent = 'Editar atividade';
+            timeDisplay.textContent = time;
+            label.textContent = '✏️ Edite a atividade:';
+            textarea.value = activity;
+            textarea.placeholder = 'Edite o texto da atividade...';
+            
+            modal.dataset.key = createActivityKey(day, time, activity);
+            modal.dataset.mode = 'edit';
+            modal.dataset.day = day;
+            modal.dataset.time = time;
+            modal.dataset.originalActivity = activity;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('noteModal');
+            modal.classList.remove('show');
+        }
+
+        function saveContent() {
+            const modal = document.getElementById('noteModal');
+            const key = modal.dataset.key;
+            const textarea = document.getElementById('noteText');
+            const mode = modal.dataset.mode;
+            
+            if (mode === 'note') {
+                notes[key] = textarea.value;
+                localStorage.setItem('cronogramaNotes', JSON.stringify(notes));
+            } else if (mode === 'edit') {
+                const day = modal.dataset.day;
+                const time = modal.dataset.time;
+                const originalActivity = modal.dataset.originalActivity;
+                const newActivity = textarea.value;
+                
+                const tables = document.querySelectorAll('table');
+                for (let table of tables) {
+                    const rows = table.querySelectorAll('tr');
+                    for (let row of rows) {
+                        const timeCell = row.querySelector('.time');
+                        const activityCell = row.querySelector('.activity-cell');
+                        
+                        if (timeCell && timeCell.textContent === time && 
+                            activityCell && activityCell.textContent.includes(originalActivity)) {
+                            
+                            activityCell.innerHTML = '<span class="sync-indicator pending"></span>' + newActivity + ' <button class="edit-btn" onclick="openEditModal(\'' + day + '\', \'' + time + '\', \'' + newActivity.replace(/'/g, "\\'") + '\', event)">✏️</button>';
+                            
+                            const oldKey = createActivityKey(day, time, originalActivity);
+                            const newKey = createActivityKey(day, time, newActivity);
+                            
+                            if (notes[oldKey]) {
+                                notes[newKey] = notes[oldKey];
+                                delete notes[oldKey];
+                            }
+                            
+                            localStorage.setItem('cronogramaNotes', JSON.stringify(notes));
+                            
+                            if (isAuthenticated) {
+                                setTimeout(() => syncWithGoogleCalendar(), 500);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            closeModal();
+        }
+
+        function editTime(day, element, currentTime) {
+            const newTime = prompt('Editar horário:', currentTime);
+            if (newTime && newTime !== currentTime) {
+                element.textContent = newTime;
+                if (isAuthenticated) {
+                    setTimeout(() => syncWithGoogleCalendar(), 500);
+                }
+            }
+        }
+
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('noteModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Iniciar quando a página carregar
+        window.addEventListener('load', initializeGoogleAPI);
+    </script>
+</body>
+</html>
