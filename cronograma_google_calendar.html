@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cronograma Semanal + Google Calendar</title>
-    <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
@@ -743,15 +742,13 @@
                     error_callback: handleAuthError,
                 });
 
+                console.log('Token client inicializado com sucesso');
+                
                 // Carregar token armazenado se existir
                 const storedToken = localStorage.getItem('googleToken');
                 if (storedToken) {
-                    // Token foi armazenado, tentar usar
-                    gapi.load('client', {
-                        onload: () => {
-                            initializeGoogleAPI();
-                        }
-                    });
+                    isAuthenticated = true;
+                    updateAuthUI();
                 }
             } catch (e) {
                 console.error('Erro ao inicializar auth:', e);
@@ -767,27 +764,12 @@
             if (response.access_token) {
                 isAuthenticated = true;
                 localStorage.setItem('googleToken', response.access_token);
-                
-                gapi.load('client', {
-                    onload: () => {
-                        initializeGoogleAPI();
-                    }
-                });
+                console.log('Token obtido e armazenado com sucesso');
+                updateAuthUI();
             }
         }
 
-        function initializeGoogleAPI() {
-            const token = localStorage.getItem('googleToken');
-            if (!token) {
-                return;
-            }
-
-            // Não precisa carregar gapi.client, vamos usar fetch direto
-            isAuthenticated = true;
-            updateAuthUI();
-        }
-
-        function updateAuthUI() {
+function updateAuthUI() {
             if (isAuthenticated) {
                 document.getElementById('connectBtn').textContent = '🔓 Desconectar';
                 document.getElementById('userInfo').textContent = '✅ Conectado com Google';
