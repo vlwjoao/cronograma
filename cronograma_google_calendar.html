@@ -262,17 +262,6 @@
         .delete-btn { color: #ef4444; }
         .delete-btn:hover { opacity: 1; color: #dc2626; }
         tr:hover .edit-btn, tr:hover .delete-btn { opacity: 1; }
-        .sync-indicator { 
-            display: inline-block; 
-            width: 8px; 
-            height: 8px; 
-            border-radius: 50%; 
-            margin-right: 6px; 
-            flex-shrink: 0; 
-        }
-        .sync-indicator.synced { background: #10b981; }
-        .sync-indicator.pending { background: #f59e0b; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
 
         /* ===== IMPORTANT BOX ===== */
         .important-box { 
@@ -765,6 +754,7 @@
             <div class="legend-items">
                 <div class="legend-item"><div class="legend-box" style="background:#10b981;"></div><span>✅ Sincronizado</span></div>
                 <div class="legend-item"><div class="legend-box" style="background:#f59e0b; animation: pulse 1s infinite;"></div><span>⏳ Pendente</span></div>
+                <div class="legend-item"><div class="legend-box" style="background:#ef4444;"></div><span>❌ Não sincronizado</span></div>
             </div>
         </div>
     </div>
@@ -847,10 +837,56 @@
     const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
     const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
     const STORAGE_KEY = 'weeklyScheduleData';
+    const SYNC_STATUS_KEY = 'syncStatus';
 
     let isAuthenticated = false;
     let tokenClient;
     let isSyncing = false;
+    let globalSyncStatus = 'disconnected'; // 'synced' | 'pending' | 'disconnected' | 'error'
+
+    // ===================================================================
+    // CONTROLE DE STATUS GLOBAL (sem bolinhas nas atividades)
+    // ===================================================================
+    function setGlobalSyncStatus(status) {
+        globalSyncStatus = status;
+        localStorage.setItem(SYNC_STATUS_KEY, status);
+        updateSyncStatusUI(status);
+    }
+
+    function loadGlobalSyncStatus() {
+        const saved = localStorage.getItem(SYNC_STATUS_KEY);
+        if (saved) {
+            globalSyncStatus = saved;
+            updateSyncStatusUI(saved);
+        } else {
+            setGlobalSyncStatus('disconnected');
+        }
+    }
+
+    function updateSyncStatusUI(status) {
+        const el = document.getElementById('syncStatus');
+        const texts = {
+            'synced': '✅ Sincronizado',
+            'pending': '⏳ Pendente',
+            'disconnected': '🔴 Desconectado',
+            'error': '❌ Erro',
+            'syncing': '🔄 Sincronizando...'
+        };
+        el.className = 'sync-status ' + status;
+        el.textContent = texts[status] || '🔴 Desconectado';
+    }
+
+    function markAsPending() {
+        if (isAuthenticated && globalSyncStatus !== 'pending') {
+            setGlobalSyncStatus('pending');
+        }
+    }
+
+    function markAsSynced() {
+        if (isAuthenticated) {
+            setGlobalSyncStatus('synced');
+        }
+    }
 
     // ===================================================================
     // EMOJI PICKER
@@ -956,23 +992,6 @@
         '👨': 'Pessoas',
         '👩': 'Pessoas',
         '🧔': 'Pessoas',
-        '👨‍🦰': 'Pessoas',
-        '👩‍🦰': 'Pessoas',
-        '👨‍🦱': 'Pessoas',
-        '👩‍🦱': 'Pessoas',
-        '👨‍🦳': 'Pessoas',
-        '👩‍🦳': 'Pessoas',
-        '👨‍🦲': 'Pessoas',
-        '👩‍🦲': 'Pessoas',
-        '🧑‍🦰': 'Pessoas',
-        '🧑‍🦱': 'Pessoas',
-        '🧑‍🦳': 'Pessoas',
-        '🧑‍🦲': 'Pessoas',
-        '👱': 'Pessoas',
-        '👱‍♂️': 'Pessoas',
-        '👱‍♀️': 'Pessoas',
-        '🧔‍♂️': 'Pessoas',
-        '🧔‍♀️': 'Pessoas',
         '👵': 'Pessoas',
         '👴': 'Pessoas',
         '🐶': 'Animais',
@@ -1547,7 +1566,7 @@
     });
 
     // ===================================================================
-    // MODELO DE ROTINA (CORRIGIDO - apenas atividades importantes têm emoji)
+    // MODELO DE ROTINA
     // ===================================================================
     const DEFAULT_ROUTINE = {
         segunda: [
@@ -1659,6 +1678,7 @@
     function showProgress(message) {
         document.getElementById('progressContainer').classList.add('active');
         document.getElementById('progressMessage').textContent = message || '⏳ Sincronizando...';
+        setGlobalSyncStatus('syncing');
     }
     function updateProgress(current, total) {
         const pct = Math.min(100, Math.round((current / total) * 100));
@@ -1794,7 +1814,7 @@
         });
         localStorage.removeItem(STORAGE_KEY);
         updateAllImportantBoxes();
-        updateSyncStatus('pending', '⏳ Tabela limpa');
+        markAsPending();
         alert('✅ Todas as atividades foram removidas.');
     }
 
@@ -1828,12 +1848,12 @@
         });
         saveScheduleToStorage();
         updateAllImportantBoxes();
-        updateSyncStatus('pending', '⏳ Modelo carregado');
+        markAsPending();
         alert('✅ Rotina modelo carregada!');
     }
 
     // ===================================================================
-    // RENDERIZAÇÃO
+    // RENDERIZAÇÃO (SEM BOLINHA)
     // ===================================================================
     function renderActivityCell(cell) {
         const day = cell.closest('table').id.replace('-table','');
@@ -1842,9 +1862,7 @@
         const duration = parseInt(cell.dataset.duration) || 60;
 
         cell.innerHTML = '';
-        const indicator = document.createElement('span');
-        indicator.className = 'sync-indicator synced';
-        cell.appendChild(indicator);
+        // REMOVIDO: sync-indicator (bolinha)
         
         const textSpan = document.createElement('span');
         textSpan.className = 'activity-text';
@@ -1932,7 +1950,7 @@
         });
         closeAddModal();
         saveScheduleToStorage();
-        updateSyncStatus('pending', '⏳ Alterações pendentes');
+        markAsPending();
     }
 
     function deleteActivity(day, cellElement, event) {
@@ -1941,7 +1959,7 @@
         if (confirm('Deletar esta atividade?')) {
             cellElement.closest('tr').remove();
             saveScheduleToStorage();
-            updateSyncStatus('pending', '⏳ Alterações pendentes');
+            markAsPending();
             updateImportantBox(day);
         }
     }
@@ -1973,7 +1991,7 @@
         }
         closeModal();
         saveScheduleToStorage();
-        updateSyncStatus('pending', '⏳ Alterações pendentes');
+        markAsPending();
     }
 
     function editTime(day, element, currentTime) {
@@ -1988,7 +2006,7 @@
         element.textContent = newTime;
         sortTableByTime(table);
         saveScheduleToStorage();
-        updateSyncStatus('pending', '⏳ Alterações pendentes');
+        markAsPending();
         updateImportantBox(day);
     }
 
@@ -2032,7 +2050,7 @@
             document.getElementById('syncBtn').disabled = true;
             document.getElementById('desyncBtn').disabled = true;
             document.getElementById('userInfo').textContent = '';
-            updateSyncStatus('disconnected', '🔴 Desconectado');
+            setGlobalSyncStatus('disconnected');
             window.location.reload();
         } else {
             if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -2061,7 +2079,7 @@
 
     function handleAuthError(error) {
         console.error('Erro de autenticação:', error);
-        updateSyncStatus('error', '❌ Erro: ' + error.error);
+        setGlobalSyncStatus('error');
     }
 
     function handleCredentialResponse(response) {
@@ -2080,20 +2098,31 @@
             document.getElementById('syncBtn').disabled = false;
             document.getElementById('desyncBtn').disabled = false;
             document.getElementById('userInfo').textContent = '✅ Conectado com Google';
-            updateSyncStatus('synced', '✅ Pronto para sincronizar');
+            loadGlobalSyncStatus();
+            // Se estava desconectado, marca como pendente (pois pode ter alterações)
+            if (globalSyncStatus === 'disconnected') {
+                setGlobalSyncStatus('pending');
+            }
         } else {
             document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
             document.getElementById('syncBtn').disabled = true;
             document.getElementById('desyncBtn').disabled = true;
             document.getElementById('userInfo').textContent = '';
-            updateSyncStatus('disconnected', '🔴 Desconectado');
+            setGlobalSyncStatus('disconnected');
         }
     }
 
-    function updateSyncStatus(status, text) {
+    function updateSyncStatusUI(status) {
         const el = document.getElementById('syncStatus');
+        const texts = {
+            'synced': '✅ Sincronizado',
+            'pending': '⏳ Pendente',
+            'disconnected': '🔴 Desconectado',
+            'error': '❌ Erro',
+            'syncing': '🔄 Sincronizando...'
+        };
         el.className = 'sync-status ' + status;
-        el.textContent = text;
+        el.textContent = texts[status] || '🔴 Desconectado';
     }
 
     function updateMonthInfo() {
@@ -2113,7 +2142,7 @@
         localStorage.removeItem('googleToken');
         localStorage.removeItem('googleTokenExpiry');
         updateAuthUI();
-        updateSyncStatus('error', '⚠️ Sessão expirada, reconecte');
+        setGlobalSyncStatus('error');
         if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
     }
 
@@ -2175,7 +2204,7 @@
         isSyncing = true;
         setButtonsEnabled(false);
         showProgress('⏳ Sincronizando...');
-        updateSyncStatus('syncing', '🔄 Sincronizando...');
+        setGlobalSyncStatus('syncing');
         try {
             const activities = getAllActivitiesFromSchedule();
             const today = new Date();
@@ -2222,10 +2251,10 @@
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
             const startDateStr = today.toLocaleDateString('pt-BR');
             const endDateStr = new Date(year, month, daysInMonth).toLocaleDateString('pt-BR');
-            updateSyncStatus('synced', `✅ ${successCount} eventos sincronizados`);
-            setTimeout(() => updateSyncStatus('synced', '✅ Pronto'), 3000);
+            setGlobalSyncStatus('synced');
+            setTimeout(() => updateSyncStatusUI('synced'), 3000);
         } catch (error) {
-            updateSyncStatus('error', '❌ Erro: ' + error.message);
+            setGlobalSyncStatus('error');
         } finally {
             hideProgress();
             isSyncing = false;
@@ -2241,7 +2270,7 @@
         isSyncing = true;
         setButtonsEnabled(false);
         showProgress('⏳ Dessincronizando...');
-        updateSyncStatus('syncing', '🔄 Dessincronizando...');
+        setGlobalSyncStatus('syncing');
         try {
             const activities = getAllActivitiesFromSchedule();
             const today = new Date();
@@ -2271,11 +2300,11 @@
                 updateProgress(processedDays, totalDays);
             }
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
-            updateSyncStatus('synced', `✅ ${deletedCount} removidos`);
             alert(`✅ ${deletedCount} eventos removidos.`);
-            setTimeout(() => updateSyncStatus('synced', '✅ Pronto'), 3000);
+            setGlobalSyncStatus('synced');
+            setTimeout(() => updateSyncStatusUI('synced'), 3000);
         } catch (error) {
-            updateSyncStatus('error', '❌ Erro: ' + error.message);
+            setGlobalSyncStatus('error');
         } finally {
             hideProgress();
             isSyncing = false;
@@ -2303,6 +2332,7 @@
     // INICIALIZAÇÃO
     // ===================================================================
     window.addEventListener('load', function() {
+        loadGlobalSyncStatus();
         const hasSaved = loadScheduleFromStorage();
         attachTimeClickHandlers();
         initializeGoogleAuth();
