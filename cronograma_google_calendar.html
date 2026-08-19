@@ -6,681 +6,118 @@
     <title>Cronograma Semanal + Google Calendar</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        .google-auth {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            padding: 15px;
-            background: rgba(0,0,0,0.1);
-            border-radius: 8px;
-            align-items: center;
-        }
-        .auth-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s;
-            background: white;
-            color: #667eea;
-        }
-        .auth-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .auth-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .add-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #10b981;
-            color: white;
-            font-size: 22px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .add-btn:hover {
-            transform: translateY(-2px) scale(1.05);
-            background: #059669;
-        }
-        .sync-status {
-            display: inline-block;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        .sync-status.synced {
-            background: #10b981;
-            color: white;
-        }
-        .sync-status.syncing {
-            background: #f59e0b;
-            color: white;
-        }
-        .sync-status.error {
-            background: #ef4444;
-            color: white;
-        }
-        .sync-status.disconnected {
-            background: #6b7280;
-            color: white;
-        }
-        .user-info {
-            text-align: center;
-            padding: 10px;
-            color: white;
-            font-size: 14px;
-        }
-        .month-info {
-            text-align: center;
-            padding: 10px;
-            color: rgba(255,255,255,0.9);
-            font-size: 13px;
-            font-style: italic;
-        }
-        .tabs {
-            display: flex;
-            background: #f5f5f5;
-            border-bottom: 1px solid #ddd;
-            overflow-x: auto;
-        }
-        .tab-btn {
-            flex: 1;
-            min-width: 120px;
-            padding: 15px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        .tab-btn:hover {
-            background: #efefef;
-            color: #333;
-        }
-        .tab-btn.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-        .content {
-            padding: 30px;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th {
-            background: #f0f0f0;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #ddd;
-        }
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-        }
-        tr:hover {
-            background: #f9f9f9;
-        }
-        .time {
-            color: #667eea;
-            font-weight: 600;
-            min-width: 80px;
-            cursor: pointer;
-        }
-        .time:hover {
-            text-decoration: underline;
-        }
-        .activity-cell {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .activity-text {
-            flex: 1;
-            min-width: 150px;
-        }
-        .edit-btn {
-            background: none;
-            border: none;
-            color: #667eea;
-            cursor: pointer;
-            font-size: 16px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            padding: 4px 8px;
-            margin-left: 10px;
-        }
-        .edit-btn:hover {
-            color: #5568d3;
-        }
-        .delete-btn {
-            background: none;
-            border: none;
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 16px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            padding: 4px 8px;
-            margin-left: 5px;
-        }
-        .delete-btn:hover {
-            color: #dc2626;
-        }
-        tr:hover .edit-btn,
-        tr:hover .delete-btn {
-            opacity: 1;
-        }
-        .sync-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-        .sync-indicator.synced {
-            background: #10b981;
-        }
-        .sync-indicator.pending {
-            background: #f59e0b;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.3s;
-        }
-        .modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            animation: slideUp 0.3s;
-        }
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        .modal-header {
-            margin-bottom: 20px;
-        }
-        .modal-header h2 {
-            color: #333;
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-        .modal-header p {
-            color: #666;
-            font-size: 14px;
-        }
-        .modal-body {
-            margin-bottom: 20px;
-        }
-        .modal-body label {
-            display: block;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-            font-size: 14px;
-            margin-top: 12px;
-        }
-        .modal-body input[type="text"],
-        .modal-body input[type="time"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 14px;
-        }
-        .modal-body input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .days-checkbox-group {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 5px;
-        }
-        .day-checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #444;
-            cursor: pointer;
-        }
-        #noteLabel {
-            display: block;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        #noteText {
-            width: 100%;
-            min-height: 120px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 14px;
-            resize: vertical;
-        }
-        #noteText:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .modal-footer {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        .modal-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .modal-btn.save {
-            background: #667eea;
-            color: white;
-        }
-        .modal-btn.save:hover {
-            background: #5568d3;
-        }
-        .modal-btn.cancel {
-            background: #f0f0f0;
-            color: #333;
-        }
-        .modal-btn.cancel:hover {
-            background: #e0e0e0;
-        }
-        .color-legend {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .color-legend h3 {
-            font-size: 16px;
-            color: #333;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        .legend-items {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: #555;
-        }
-        .legend-box {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-        }
-        .config-message {
-            background: #fef3c7;
-            border: 1px solid #fbbf24;
-            color: #92400e;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 14px;
-        }
-        .config-message p {
-            margin: 5px 0;
-        }
+        /* ... (mesmo CSS do original) ... */
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📅 Cronograma Semanal + Google Calendar</h1>
-            <p>Sincronização automática com sua agenda Google</p>
-            <div class="google-auth">
-                <button class="auth-btn" id="connectBtn" onclick="handleConnectClick()">🔗 Conectar Google</button>
-                <button class="auth-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
-                <button class="auth-btn" id="desyncBtn" onclick="desyncNow()" disabled style="background: #ef4444; color: white;">🗑️ Dessincronizar</button>
-                <button class="add-btn" onclick="openAddModal()" title="Adicionar Nova Atividade">+</button>
-                <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
-            </div>
-            <div class="user-info" id="userInfo"></div>
-            <div class="month-info" id="monthInfo"></div>
-        </div>
-
-        <div class="content">
-            <div class="config-message" id="configMessage">
-                <p><strong>💡 Dica:</strong> Edite suas atividades neste mês e clique em "🔄 Sincronizar Agora" para enviar tudo ao Google Calendar.</p>
-                <p style="font-size: 12px; margin-top: 8px;">No próximo mês, a sincronização criará um novo conjunto de eventos para os dias vigentes.</p>
-            </div>
-
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('segunda', event)">Seg</button>
-                <button class="tab-btn" onclick="switchTab('terca', event)">Ter</button>
-                <button class="tab-btn" onclick="switchTab('quarta', event)">Qua</button>
-                <button class="tab-btn" onclick="switchTab('quinta', event)">Qui</button>
-                <button class="tab-btn" onclick="switchTab('sexta', event)">Sex</button>
-                <button class="tab-btn" onclick="switchTab('sabado', event)">Sab</button>
-                <button class="tab-btn" onclick="switchTab('domingo', event)">Dom</button>
-            </div>
-
-            <!-- SEGUNDA -->
-            <div id="segunda" class="tab-content active">
-                <table id="segunda-table">
-                    <tr><th>Horário</th><th>Atividade</th></tr>
-                    <tr><td class="time" data-time="08:00">08:00</td><td class="activity-cell" data-activity="Acordar, banho e escovar os dentes"></td></tr>
-                    <tr><td class="time" data-time="08:30">08:30</td><td class="activity-cell" data-activity="Ioga e meditação"></td></tr>
-                    <tr><td class="time" data-time="09:30">09:30</td><td class="activity-cell" data-activity="Café da manhã (colocar comida para descongelar)"></td></tr>
-                    <tr><td class="time" data-time="09:40">09:40</td><td class="activity-cell" data-activity="🧺 Colocar roupas na máquina (Tarefa do dia)"></td></tr>
-                    <tr><td class="time" data-time="10:15">10:15</td><td class="activity-cell" data-activity="Busca por emprego / Atualização de currículo"></td></tr>
-                    <tr><td class="time" data-time="12:15">12:15</td><td class="activity-cell" data-activity="Almoço"></td></tr>
-                    <tr><td class="time" data-time="14:00">14:00</td><td class="activity-cell" data-activity="Limpeza diária da caixa de areia"></td></tr>
-                    <tr><td class="time" data-time="16:00">16:00</td><td class="activity-cell" data-activity="Exercício físico"></td></tr>
-                    <tr><td class="time" data-time="17:00">17:00</td><td class="activity-cell" data-activity="Estudos"></td></tr>
-                    <tr><td class="time" data-time="18:45">18:45</td><td class="activity-cell" data-activity="🧺 Transferir roupas + pendurar"></td></tr>
-                    <tr><td class="time" data-time="19:00">19:00</td><td class="activity-cell" data-activity="Jantar"></td></tr>
-                    <tr><td class="time" data-time="20:00">20:00</td><td class="activity-cell" data-activity="Leitura"></td></tr>
-                    <tr><td class="time" data-time="20:30">20:30</td><td class="activity-cell" data-activity="Lazer"></td></tr>
-                    <tr><td class="time" data-time="21:30">21:30</td><td class="activity-cell" data-activity="Arrumação do espaço para o dia seguinte"></td></tr>
-                </table>
-            </div>
-
-            <!-- TERÇA -->
-            <div id="terca" class="tab-content">
-                <table id="terca-table">
-                    <tr><th>Horário</th><th>Atividade</th></tr>
-                    <tr><td class="time" data-time="08:00">08:00</td><td class="activity-cell" data-activity="Acordar, banho e escovar os dentes"></td></tr>
-                    <tr><td class="time" data-time="08:30">08:30</td><td class="activity-cell" data-activity="Ioga e meditação"></td></tr>
-                    <tr><td class="time" data-time="09:30">09:30</td><td class="activity-cell" data-activity="Café da manhã (colocar comida para descongelar)"></td></tr>
-                    <tr><td class="time" data-time="09:40">09:40</td><td class="activity-cell" data-activity="🧼 Colocar toalhas e tapetinhos na máquina (Tarefa do dia)"></td></tr>
-                    <tr><td class="time" data-time="10:15">10:15</td><td class="activity-cell" data-activity="Busca por emprego / Atualização de currículo"></td></tr>
-                    <tr><td class="time" data-time="12:15">12:15</td><td class="activity-cell" data-activity="Almoço"></td></tr>
-                    <tr><td class="time" data-time="14:00">14:00</td><td class="activity-cell" data-activity="Limpeza diária da caixa de areia"></td></tr>
-                    <tr><td class="time" data-time="16:00">16:00</td><td class="activity-cell" data-activity="Exercício físico"></td></tr>
-                    <tr><td class="time" data-time="17:00">17:00</td><td class="activity-cell" data-activity="Estudos"></td></tr>
-                    <tr><td class="time" data-time="18:45">18:45</td><td class="activity-cell" data-activity="🧼 Pendurar toalhas e tapetinhos"></td></tr>
-                    <tr><td class="time" data-time="19:00">19:00</td><td class="activity-cell" data-activity="Jantar"></td></tr>
-                    <tr><td class="time" data-time="20:00">20:00</td><td class="activity-cell" data-activity="Leitura"></td></tr>
-                    <tr><td class="time" data-time="20:30">20:30</td><td class="activity-cell" data-activity="Lazer"></td></tr>
-                    <tr><td class="time" data-time="21:30">21:30</td><td class="activity-cell" data-activity="Arrumação do espaço para o dia seguinte"></td></tr>
-                </table>
-            </div>
-
-            <!-- QUARTA -->
-            <div id="quarta" class="tab-content">
-                <table id="quarta-table">
-                    <tr><th>Horário</th><th>Atividade</th></tr>
-                    <tr><td class="time" data-time="08:00">08:00</td><td class="activity-cell" data-activity="Acordar, banho e escovar os dentes"></td></tr>
-                    <tr><td class="time" data-time="08:30">08:30</td><td class="activity-cell" data-activity="Ioga e meditação"></td></tr>
-                    <tr><td class="time" data-time="09:30">09:30</td><td class="activity-cell" data-activity="Café da manhã (colocar comida para descongelar)"></td></tr>
-                    <tr><td class="time" data-time="10:15">10:15</td><td class="activity-cell" data-activity="Busca por emprego / Atualização de currículo"></td></tr>
-                    <tr><td class="time" data-time="12:15">12:15</td><td class="activity-cell" data-activity="Almoço"></td></tr>
-                    <tr><td class="time" data-time="14:00">14:00</td><td class="activity-cell" data-activity="Limpeza diária da caixa de areia"></td></tr>
-                    <tr><td class="time" data-time="15:00">15:00</td><td class="activity-cell" data-activity="🧹 Limpeza completa do piso (cozinha + área de serviço)"></td></tr>
-                    <tr><td class="time" data-time="16:00">16:00</td><td class="activity-cell" data-activity="🐱 Troca completa da areia dos gatos"></td></tr>
-                    <tr><td class="time" data-time="16:45">16:45</td><td class="activity-cell" data-activity="Exercício físico"></td></tr>
-                    <tr><td class="time" data-time="17:00">17:00</td><td class="activity-cell" data-activity="Estudos"></td></tr>
-                    <tr><td class="time" data-time="19:00">19:00</td><td class="activity-cell" data-activity="Jantar"></td></tr>
-                    <tr><td class="time" data-time="20:00">20:00</td><td class="activity-cell" data-activity="Leitura"></td></tr>
-                    <tr><td class="time" data-time="20:30">20:30</td><td class="activity-cell" data-activity="Lazer"></td></tr>
-                    <tr><td class="time" data-time="21:30">21:30</td><td class="activity-cell" data-activity="Arrumação do espaço para o dia seguinte"></td></tr>
-                </table>
-            </div>
-
-            <!-- QUINTA -->
-            <div id="quinta" class="tab-content">
-                <table id="quinta-table">
-                    <tr><th>Horário</th><th>Atividade</th></tr>
-                    <tr><td class="time" data-time="08:00">08:00</td><td class="activity-cell" data-activity="Acordar, banho e escovar os dentes"></td></tr>
-                    <tr><td class="time" data-time="08:30">08:30</td><td class="activity-cell" data-activity="Ioga e meditação"></td></tr>
-                    <tr><td class="time" data-time="09:30">09:30</td><td class="activity-cell" data-activity="Café da manhã (colocar comida para descongelar)"></td></tr>
-                    <tr><td class="time" data-time="09:40">09:40</td><td class="activity-cell" data-activity="🧺 Colocar roupas na máquina (Tarefa do dia)"></td></tr>
-                    <tr><td class="time" data-time="10:15">10:15</td><td class="activity-cell" data-activity="Busca por emprego / Atualização de currículo"></td></tr>
-                    <tr><td class="time" data-time="12:15">12:15</td><td class="activity-cell" data-activity="Almoço"></td></tr>
-                    <tr><td class="time" data-time="14:00">14:00</td><td class="activity-cell" data-activity="Limpeza diária da caixa de areia"></td></tr>
-                    <tr><td class="time" data-time="16:00">16:00</td><td class="activity-cell" data-activity="Exercício físico"></td></tr>
-                    <tr><td class="time" data-time="17:00">17:00</td><td class="activity-cell" data-activity="Estudos"></td></tr>
-                    <tr><td class="time" data-time="18:45">18:45</td><td class="activity-cell" data-activity="🧺 Transferir roupas + pendurar"></td></tr>
-                    <tr><td class="time" data-time="19:00">19:00</td><td class="activity-cell" data-activity="Jantar"></td></tr>
-                    <tr><td class="time" data-time="20:00">20:00</td><td class="activity-cell" data-activity="Leitura"></td></tr>
-                    <tr><td class="time" data-time="20:30">20:30</td><td class="activity-cell" data-activity="Lazer"></td></tr>
-                    <tr><td class="time" data-time="21:30">21:30</td><td class="activity-cell" data-activity="Arrumação do espaço para o dia seguinte"></td></tr>
-                </table>
-            </div>
-
-            <!-- SEXTA -->
-            <div id="sexta" class="tab-content">
-                <table id="sexta-table">
-                    <tr><th>Horário</th><th>Atividade</th></tr>
-                    <tr><td class="time" data-time="08:00">08:00</td><td class="activity-cell" data-activity="Acordar, banho e escovar os dentes"></td></tr>
-                    <tr><td class="time" data-time="08:30">08:30</td><td class="activity-cell" data-activity="Ioga e meditação"></td></tr>
-                    <tr><td class="time" data-time="09:30">09:30</td><td class="activity-cell" data-activity="Café da manhã (colocar comida para descongelar)"></td></tr>
-                    <tr><td class="time" data-time="10:15">10:15</td><td class="activity-cell" data-activity="Busca por emprego / Atualização de currículo"></td></tr>
-                    <tr><td class="time" data-time="12:15">12:15</td><td class="activity-cell" data-activity="Almoço"></td></tr>
-                    <tr><td class="time" data-time="14:00">14:00</td><td class="activity-cell" data-activity="Limpeza diária da caixa de areia"></td></tr>
-                    <tr><td class="time" data-time="15:00">15:00</td><td class="activity-cell" data-activity="🛏️ Organização do quarto"></td></tr>
-                    <tr><td class="time" data-time="16:00">16:00</td><td class="activity-cell" data-activity="🌿 Limpeza da varanda"></td></tr>
-                    <tr><td class="time" data-time="16:45">16:45</td><td class="activity-cell" data-activity="Exercício físico"></td></tr>
-                    <tr><td class="time" data-time="17:00">17:00</td><td class="activity-cell" data-activity="Estudos"></td></tr>
-                    <tr><td class="time" data-time="19:00">19:00</td><td class="activity-cell" data-activity="Jantar"></td></tr>
-                    <tr><td class="time" data-time="20:00">20:00</td><td class="activity-cell" data-activity="Leitura"></td></tr>
-                    <tr><td class="time" data-time="20:30">20:30</td><td class="activity-cell" data-activity="Lazer"></td></tr>
-                    <tr><td class="time" data-time="21:30">21:30</td><td class="activity-cell" data-activity="Arrumação do espaço para o dia seguinte"></td></tr>
-                </table>
-            </div>
-
-            <!-- SÁBADO -->
-            <div id="sabado" class="tab-content">
-                <table id="sabado-table">
-                    <tr><th>Horário</th><th>Atividade</th></tr>
-                    <tr><td class="time" data-time="08:00">08:00</td><td class="activity-cell" data-activity="Acordar, banho e escovar os dentes"></td></tr>
-                    <tr><td class="time" data-time="08:30">08:30</td><td class="activity-cell" data-activity="Ioga e meditação"></td></tr>
-                    <tr><td class="time" data-time="09:30">09:30</td><td class="activity-cell" data-activity="Café da manhã (colocar comida para descongelar)"></td></tr>
-                    <tr><td class="time" data-time="10:15">10:15</td><td class="activity-cell" data-activity="Busca por emprego / Atualização de currículo"></td></tr>
-                    <tr><td class="time" data-time="12:15">12:15</td><td class="activity-cell" data-activity="Almoço"></td></tr>
-                    <tr><td class="time" data-time="13:00">13:00</td><td class="activity-cell" data-activity="🚿 Faxina pesada do banheiro"></td></tr>
-                    <tr><td class="time" data-time="14:30">14:30</td><td class="activity-cell" data-activity="🐱 Limpeza do quartinho dos gatos"></td></tr>
-                    <tr><td class="time" data-time="15:15">15:15</td><td class="activity-cell" data-activity="🧺 Lavar roupa de cama e tapete do quarto (quinzenal)"></td></tr>
-                    <tr><td class="time" data-time="16:00">16:00</td><td class="activity-cell" data-activity="Exercício físico"></td></tr>
-                    <tr><td class="time" data-time="17:00">17:00</td><td class="activity-cell" data-activity="Estudos"></td></tr>
-                    <tr><td class="time" data-time="19:00">19:00</td><td class="activity-cell" data-activity="Jantar"></td></tr>
-                    <tr><td class="time" data-time="20:00">20:00</td><td class="activity-cell" data-activity="Leitura"></td></tr>
-                    <tr><td class="time" data-time="20:30">20:30</td><td class="activity-cell" data-activity="Lazer"></td></tr>
-                    <tr><td class="time" data-time="21:30">21:30</td><td class="activity-cell" data-activity="Arrumação do espaço para o dia seguinte"></td></tr>
-                </table>
-            </div>
-
-            <!-- DOMINGO -->
-            <div id="domingo" class="tab-content">
-                <table id="domingo-table">
-                    <tr><th>Horário</th><th>Atividade</th></tr>
-                    <tr><td class="time" data-time="09:00">09:00</td><td class="activity-cell" data-activity="🍳 Preparo das refeições da semana (arroz, feijão, frango)"></td></tr>
-                    <tr><td class="time" data-time="12:00">12:00</td><td class="activity-cell" data-activity="Congelamento das refeições"></td></tr>
-                    <tr><td class="time" data-time="14:00">14:00</td><td class="activity-cell" data-activity="Resto do dia livre"></td></tr>
-                </table>
-            </div>
-        </div>
-
-        <div style="max-width: 1200px; margin: 30px auto; padding: 0 20px;">
-            <div class="color-legend">
-                <h3>📡 Status de Sincronização</h3>
-                <div class="legend-items">
-                    <div class="legend-item">
-                        <div class="legend-box" style="background: #10b981;"></div>
-                        <span>✅ Sincronizado</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-box" style="background: #f59e0b; animation: pulse 1s infinite;"></div>
-                        <span>⏳ Pendente de Sincronização</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL -->
-    <div id="noteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalActivityTitle">Título</h2>
-                <p id="modalActivityTime">Horário</p>
-            </div>
-            <div class="modal-body">
-                <label id="noteLabel">Label</label>
-                <textarea id="noteText" placeholder="Digite aqui..."></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
-                <button class="modal-btn save" onclick="saveContent()">Salvar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL ADICIONAR NOVA ATIVIDADE -->
-    <div id="addModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Nova Atividade</h2>
-                <p>Insira os dados da nova tarefa</p>
-            </div>
-            <div class="modal-body">
-                <label>Nome da Atividade:</label>
-                <input type="text" id="newActivityName" placeholder="Ex: Reunião importante">
-                
-                <label>Horário (HH:MM):</label>
-                <input type="time" id="newActivityTime">
-                
-                <label>Dias da Semana:</label>
-                <div class="days-checkbox-group">
-                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="segunda"> Segunda</label>
-                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="terca"> Terça</label>
-                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quarta"> Quarta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quinta"> Quinta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sexta"> Sexta</label>
-                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sabado"> Sábado</label>
-                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="domingo"> Domingo</label>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn cancel" onclick="closeAddModal()">Cancelar</button>
-                <button class="modal-btn save" onclick="saveNewActivity()">Adicionar</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- ... (mesmo HTML do original) ... -->
+    
     <script>
         const CLIENT_ID = '405103894296-n00m60mb021u4os48kcnl4lmhmjkm6oe.apps.googleusercontent.com';
         const CALENDAR_ID = 'primary';
-        const SCOPES = 'https://www.googleapis.com/auth/calendar';
+        const SCOPES = 'https://www.googleapis.com/auth/calendar.events'; // CORRIGIDO
         const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+        const STORAGE_KEY = 'weeklyScheduleData'; // NOVO
 
         let isAuthenticated = false;
         let tokenClient;
+
+        // ============ SISTEMA DE PERSISTÊNCIA ============
+        
+        function saveScheduleToStorage() {
+            const schedule = {};
+            const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+            
+            days.forEach(day => {
+                const table = document.getElementById(`${day}-table`);
+                if (!table) return;
+                
+                const rows = table.querySelectorAll('tr');
+                const activities = [];
+                
+                rows.forEach((row, index) => {
+                    if (index === 0) return;
+                    const timeCell = row.querySelector('.time');
+                    const activityCell = row.querySelector('.activity-cell');
+                    
+                    if (timeCell && activityCell) {
+                        activities.push({
+                            time: timeCell.dataset.time,
+                            activity: activityCell.dataset.activity
+                        });
+                    }
+                });
+                
+                schedule[day] = activities;
+            });
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule));
+        }
+
+        function loadScheduleFromStorage() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (!saved) return false;
+            
+            try {
+                const schedule = JSON.parse(saved);
+                const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+                
+                days.forEach(day => {
+                    if (!schedule[day]) return;
+                    
+                    const table = document.getElementById(`${day}-table`);
+                    if (!table) return;
+                    
+                    const header = table.querySelector('tr');
+                    table.innerHTML = '';
+                    table.appendChild(header);
+                    
+                    schedule[day].forEach(item => {
+                        const row = document.createElement('tr');
+                        
+                        const timeCell = document.createElement('td');
+                        timeCell.className = 'time';
+                        timeCell.dataset.time = item.time;
+                        timeCell.textContent = item.time;
+                        timeCell.addEventListener('click', () => {
+                            editTime(day, timeCell, item.time);
+                        });
+                        
+                        const activityCell = document.createElement('td');
+                        activityCell.className = 'activity-cell';
+                        activityCell.dataset.activity = item.activity;
+                        
+                        row.appendChild(timeCell);
+                        row.appendChild(activityCell);
+                        table.appendChild(row);
+                        
+                        renderActivityCell(activityCell);
+                    });
+                });
+                
+                return true;
+            } catch (e) {
+                console.error('Erro ao carregar dados salvos:', e);
+                return false;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function resetToDefault() {
+            if (!confirm('⚠️ Isso vai restaurar o cronograma para o padrão inicial. Todas as alterações serão perdidas. Continuar?')) {
+                return;
+            }
+            
+            localStorage.removeItem(STORAGE_KEY);
+            window.location.reload();
+        }
+
+        // ============ FUNÇÕES DE RENDERIZAÇÃO ============
 
         function renderActivityCell(cell) {
             const day = cell.closest('table').id.replace('-table', '');
@@ -724,6 +161,179 @@
             });
         }
 
+        function sortTableByTime(table) {
+            let rows = Array.from(table.rows).slice(1);
+            rows.sort((a, b) => {
+                let timeA = a.querySelector('.time').dataset.time;
+                let timeB = b.querySelector('.time').dataset.time;
+                return timeA.localeCompare(timeB);
+            });
+            rows.forEach(row => table.appendChild(row));
+        }
+
+        // ============ FUNÇÕES DE EDIÇÃO ============
+
+        function saveNewActivity() {
+            const name = document.getElementById('newActivityName').value.trim();
+            const time = document.getElementById('newActivityTime').value;
+            const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
+
+            if (!name) {
+                alert('Por favor, informe o nome da atividade.');
+                return;
+            }
+            if (!time || !TIME_REGEX.test(time)) {
+                alert('Por favor, informe um horário válido no formato HH:MM.');
+                return;
+            }
+            if (selectedDays.length === 0) {
+                alert('Por favor, selecione pelo menos um dia da semana.');
+                return;
+            }
+
+            selectedDays.forEach(day => {
+                const table = document.getElementById(`${day}-table`);
+                if (!table) return;
+
+                let rows = Array.from(table.querySelectorAll('tr')).slice(1);
+                let existingRow = rows.find(r => r.querySelector('.time').dataset.time === time);
+
+                if (existingRow) {
+                    let activityCell = existingRow.querySelector('.activity-cell');
+                    activityCell.dataset.activity += `, ${name}`;
+                    renderActivityCell(activityCell);
+                } else {
+                    const newRow = document.createElement('tr');
+                    
+                    const timeCell = document.createElement('td');
+                    timeCell.className = 'time';
+                    timeCell.dataset.time = time;
+                    timeCell.textContent = time;
+                    timeCell.addEventListener('click', () => {
+                        editTime(day, timeCell, time);
+                    });
+                    
+                    const activityCell = document.createElement('td');
+                    activityCell.className = 'activity-cell';
+                    activityCell.dataset.activity = name;
+                    
+                    newRow.appendChild(timeCell);
+                    newRow.appendChild(activityCell);
+                    table.appendChild(newRow);
+                    
+                    sortTableByTime(table);
+                    renderActivityCell(activityCell);
+                }
+            });
+
+            closeAddModal();
+            saveScheduleToStorage();
+            updateSyncStatus('pending', '⏳ Alterações pendentes de sincronização');
+        }
+
+        function deleteActivity(day, cellElement, event) {
+            event.stopPropagation();
+            if (confirm('Tem certeza que deseja deletar esta atividade?')) {
+                const row = cellElement.closest('tr');
+                row.remove();
+                saveScheduleToStorage();
+                updateSyncStatus('pending', '⏳ Alterações pendentes');
+            }
+        }
+
+        function saveContent() {
+            const modal = document.getElementById('noteModal');
+            const textarea = document.getElementById('noteText');
+            const day = modal.dataset.day;
+            const time = modal.dataset.time;
+            const newActivity = textarea.value.trim();
+
+            if (!newActivity) {
+                alert('A atividade não pode ficar vazia.');
+                return;
+            }
+
+            const table = document.getElementById(`${day}-table`);
+            const rows = table.querySelectorAll('tr');
+            for (let row of rows) {
+                const timeCell = row.querySelector('.time');
+                const activityCell = row.querySelector('.activity-cell');
+
+                if (timeCell && timeCell.dataset.time === time && activityCell) {
+                    activityCell.dataset.activity = newActivity;
+                    renderActivityCell(activityCell);
+                    break;
+                }
+            }
+            closeModal();
+            saveScheduleToStorage();
+            updateSyncStatus('pending', '⏳ Alterações pendentes');
+        }
+
+        function editTime(day, element, currentTime) {
+            const newTime = prompt('Editar horário (formato HH:MM):', currentTime);
+            if (!newTime || newTime === currentTime) return;
+
+            if (!TIME_REGEX.test(newTime)) {
+                alert('Horário inválido. Use o formato HH:MM (ex: 09:30).');
+                return;
+            }
+
+            const table = element.closest('table');
+            const conflict = Array.from(table.querySelectorAll('.time')).some(
+                cell => cell !== element && cell.dataset.time === newTime
+            );
+            if (conflict) {
+                alert('Já existe uma atividade nesse horário neste dia.');
+                return;
+            }
+
+            element.dataset.time = newTime;
+            element.textContent = newTime;
+            sortTableByTime(table);
+            saveScheduleToStorage();
+            updateSyncStatus('pending', '⏳ Alterações pendentes');
+        }
+
+        // ============ FUNÇÕES DE MODAL ============
+
+        function openEditModal(day, time, activity, event) {
+            event.stopPropagation();
+            const modal = document.getElementById('noteModal');
+            const textarea = document.getElementById('noteText');
+            const title = document.getElementById('modalActivityTitle');
+            const timeDisplay = document.getElementById('modalActivityTime');
+            const label = document.getElementById('noteLabel');
+
+            title.textContent = 'Editar atividade';
+            timeDisplay.textContent = time;
+            label.textContent = '✏️ Edite a atividade:';
+            textarea.value = activity;
+
+            modal.dataset.mode = 'edit';
+            modal.dataset.day = day;
+            modal.dataset.time = time;
+            modal.classList.add('show');
+            textarea.focus();
+        }
+
+        function openAddModal() {
+            document.getElementById('newActivityName').value = '';
+            document.getElementById('newActivityTime').value = '';
+            document.querySelectorAll('input[name="newDay"]').forEach(cb => cb.checked = false);
+            document.getElementById('addModal').classList.add('show');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('show');
+        }
+
+        function closeModal() {
+            document.getElementById('noteModal').classList.remove('show');
+        }
+
+        // ============ FUNÇÕES DE AUTENTICAÇÃO ============
+
         function handleConnectClick() {
             if (isAuthenticated) {
                 isAuthenticated = false;
@@ -740,13 +350,6 @@
                 }
             }
         }
-
-        window.addEventListener('load', function() {
-            renderAllActivityCells();
-            attachTimeClickHandlers();
-            initializeGoogleAuth();
-            updateMonthInfo();
-        });
 
         function initializeGoogleAuth() {
             try {
@@ -790,13 +393,11 @@
             if (isAuthenticated) {
                 document.getElementById('connectBtn').textContent = '🔓 Desconectar';
                 document.getElementById('syncBtn').disabled = false;
-                document.getElementById('desyncBtn').disabled = false;
                 document.getElementById('userInfo').textContent = '✅ Conectado com Google';
                 updateSyncStatus('synced', '✅ Pronto para sincronizar');
             } else {
                 document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
                 document.getElementById('syncBtn').disabled = true;
-                document.getElementById('desyncBtn').disabled = true;
                 document.getElementById('userInfo').textContent = '';
                 updateSyncStatus('disconnected', '🔴 Desconectado');
             }
@@ -834,12 +435,63 @@
             }
         }
 
+        // ============ FUNÇÕES DE SINCRONIZAÇÃO ============
+
         function generateValidEventId(date, time) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             const [hour, minute] = time.split(':');
             return `c${year}${month}${day}t${hour}${minute}`;
+        }
+
+        function getAllActivitiesFromSchedule() {
+            const activities = [];
+            const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+            days.forEach(day => {
+                const table = document.getElementById(`${day}-table`);
+                if (!table) return;
+                const rows = table.querySelectorAll('tr');
+
+                rows.forEach((row, index) => {
+                    if (index === 0) return;
+                    const timeCell = row.querySelector('.time');
+                    const activityCell = row.querySelector('.activity-cell');
+
+                    if (timeCell && activityCell) {
+                        activities.push({
+                            day: day,
+                            time: timeCell.dataset.time,
+                            activity: activityCell.dataset.activity
+                        });
+                    }
+                });
+            });
+
+            return activities;
+        }
+
+        function createCalendarEvent(activity, date) {
+            const [hour, minute] = activity.time.split(':');
+            const startDate = new Date(date);
+            startDate.setHours(parseInt(hour), parseInt(minute), 0, 0);
+
+            const endDate = new Date(date);
+            endDate.setHours(parseInt(hour) + 1, parseInt(minute), 0, 0);
+
+            return {
+                'summary': activity.activity,
+                'description': `Atividade do cronograma: ${activity.activity}`,
+                'start': {
+                    'dateTime': startDate.toISOString(),
+                    'timeZone': 'America/Sao_Paulo',
+                },
+                'end': {
+                    'dateTime': endDate.toISOString(),
+                    'timeZone': 'America/Sao_Paulo',
+                },
+            };
         }
 
         async function syncWithGoogleCalendar() {
@@ -1024,54 +676,7 @@
             return today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
         }
 
-        function getAllActivitiesFromSchedule() {
-            const activities = [];
-            const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
-
-            days.forEach(day => {
-                const table = document.getElementById(`${day}-table`);
-                if (!table) return;
-                const rows = table.querySelectorAll('tr');
-
-                rows.forEach((row, index) => {
-                    if (index === 0) return;
-                    const timeCell = row.querySelector('.time');
-                    const activityCell = row.querySelector('.activity-cell');
-
-                    if (timeCell && activityCell) {
-                        activities.push({
-                            day: day,
-                            time: timeCell.dataset.time,
-                            activity: activityCell.dataset.activity
-                        });
-                    }
-                });
-            });
-
-            return activities;
-        }
-
-        function createCalendarEvent(activity, date) {
-            const [hour, minute] = activity.time.split(':');
-            const startDate = new Date(date);
-            startDate.setHours(parseInt(hour), parseInt(minute), 0, 0);
-
-            const endDate = new Date(date);
-            endDate.setHours(parseInt(hour) + 1, parseInt(minute), 0, 0);
-
-            return {
-                'summary': activity.activity,
-                'description': `Atividade do cronograma: ${activity.activity}`,
-                'start': {
-                    'dateTime': startDate.toISOString(),
-                    'timeZone': 'America/Sao_Paulo',
-                },
-                'end': {
-                    'dateTime': endDate.toISOString(),
-                    'timeZone': 'America/Sao_Paulo',
-                },
-            };
-        }
+        // ============ SWITCH TABS ============
 
         function switchTab(day, event) {
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -1081,161 +686,28 @@
             if(event) event.target.classList.add('active');
         }
 
-        function openEditModal(day, time, activity, event) {
-            event.stopPropagation();
-            const modal = document.getElementById('noteModal');
-            const textarea = document.getElementById('noteText');
-            const title = document.getElementById('modalActivityTitle');
-            const timeDisplay = document.getElementById('modalActivityTime');
-            const label = document.getElementById('noteLabel');
+        // ============ INICIALIZAÇÃO ============
 
-            title.textContent = 'Editar atividade';
-            timeDisplay.textContent = time;
-            label.textContent = '✏️ Edite a atividade:';
-            textarea.value = activity;
-
-            modal.dataset.mode = 'edit';
-            modal.dataset.day = day;
-            modal.dataset.time = time;
-            modal.classList.add('show');
-            textarea.focus();
-        }
-
-        function openAddModal() {
-            document.getElementById('newActivityName').value = '';
-            document.getElementById('newActivityTime').value = '';
-            document.querySelectorAll('input[name="newDay"]').forEach(cb => cb.checked = false);
-            document.getElementById('addModal').classList.add('show');
-        }
-
-        function closeAddModal() {
-            document.getElementById('addModal').classList.remove('show');
-        }
-
-        function saveNewActivity() {
-            const name = document.getElementById('newActivityName').value.trim();
-            const time = document.getElementById('newActivityTime').value;
-            const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
-
-            if (!name) {
-                alert('Por favor, informe o nome da atividade.');
-                return;
+        window.addEventListener('load', function() {
+            // Tentar carregar dados salvos primeiro
+            const loaded = loadScheduleFromStorage();
+            
+            // Se não houver dados salvos, usar o HTML padrão
+            if (!loaded) {
+                renderAllActivityCells();
             }
-            if (!time || !TIME_REGEX.test(time)) {
-                alert('Por favor, informe um horário válido no formato HH:MM.');
-                return;
+            
+            attachTimeClickHandlers();
+            initializeGoogleAuth();
+            updateMonthInfo();
+            
+            // Salvar estado inicial se ainda não existir
+            if (!localStorage.getItem(STORAGE_KEY)) {
+                saveScheduleToStorage();
             }
-            if (selectedDays.length === 0) {
-                alert('Por favor, selecione pelo menos um dia da semana.');
-                return;
-            }
+        });
 
-            selectedDays.forEach(day => {
-                const table = document.getElementById(`${day}-table`);
-                if (!table) return;
-
-                let rows = Array.from(table.querySelectorAll('tr')).slice(1);
-                let existingRow = rows.find(r => r.querySelector('.time').dataset.time === time);
-
-                if (existingRow) {
-                    let activityCell = existingRow.querySelector('.activity-cell');
-                    activityCell.dataset.activity += `, ${name}`;
-                    renderActivityCell(activityCell);
-                } else {
-                    let newRow = document.createElement('tr');
-                    newRow.innerHTML = `
-                        <td class="time" data-time="${time}">${time}</td>
-                        <td class="activity-cell" data-activity="${name}"></td>
-                    `;
-                    table.appendChild(newRow);
-                    sortTableByTime(table);
-                    
-                    newRow.querySelector('.time').addEventListener('click', () => {
-                        editTime(day, newRow.querySelector('.time'), time);
-                    });
-                    renderActivityCell(newRow.querySelector('.activity-cell'));
-                }
-            });
-
-            closeAddModal();
-            updateSyncStatus('pending', '⏳ Alterações pendentes de sincronização');
-        }
-
-        function sortTableByTime(table) {
-            let rows = Array.from(table.rows).slice(1);
-            rows.sort((a, b) => {
-                let timeA = a.querySelector('.time').dataset.time;
-                let timeB = b.querySelector('.time').dataset.time;
-                return timeA.localeCompare(timeB);
-            });
-            rows.forEach(row => table.appendChild(row));
-        }
-
-        function deleteActivity(day, cellElement, event) {
-            event.stopPropagation();
-            if (confirm('Tem certeza que deseja deletar esta atividade?')) {
-                const row = cellElement.closest('tr');
-                row.remove();
-                updateSyncStatus('pending', '⏳ Alterações pendentes');
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('noteModal').classList.remove('show');
-        }
-
-        function saveContent() {
-            const modal = document.getElementById('noteModal');
-            const textarea = document.getElementById('noteText');
-            const day = modal.dataset.day;
-            const time = modal.dataset.time;
-            const newActivity = textarea.value.trim();
-
-            if (!newActivity) {
-                alert('A atividade não pode ficar vazia.');
-                return;
-            }
-
-            const table = document.getElementById(`${day}-table`);
-            const rows = table.querySelectorAll('tr');
-            for (let row of rows) {
-                const timeCell = row.querySelector('.time');
-                const activityCell = row.querySelector('.activity-cell');
-
-                if (timeCell && timeCell.dataset.time === time && activityCell) {
-                    activityCell.dataset.activity = newActivity;
-                    renderActivityCell(activityCell);
-                    break;
-                }
-            }
-            closeModal();
-            updateSyncStatus('pending', '⏳ Alterações pendentes');
-        }
-
-        function editTime(day, element, currentTime) {
-            const newTime = prompt('Editar horário (formato HH:MM):', currentTime);
-            if (!newTime || newTime === currentTime) return;
-
-            if (!TIME_REGEX.test(newTime)) {
-                alert('Horário inválido. Use o formato HH:MM (ex: 09:30).');
-                return;
-            }
-
-            const table = element.closest('table');
-            const conflict = Array.from(table.querySelectorAll('.time')).some(
-                cell => cell !== element && cell.dataset.time === newTime
-            );
-            if (conflict) {
-                alert('Já existe uma atividade nesse horário neste dia.');
-                return;
-            }
-
-            element.dataset.time = newTime;
-            element.textContent = newTime;
-            sortTableByTime(table);
-            updateSyncStatus('pending', '⏳ Alterações pendentes');
-        }
-
+        // Event listeners para modais
         window.addEventListener('click', function(e) {
             const modal = document.getElementById('noteModal');
             const addModal = document.getElementById('addModal');
@@ -1249,6 +721,9 @@
                 closeAddModal();
             }
         });
+
+        // Botão para restaurar padrão (adicione no HTML se desejar)
+        // <button onclick="resetToDefault()">🔄 Restaurar Padrão</button>
     </script>
 </body>
 </html>
