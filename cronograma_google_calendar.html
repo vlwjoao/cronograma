@@ -346,7 +346,137 @@
             font-size: 14px; 
             margin-top: 12px; 
         }
-        .modal-body input[type="text"], 
+        /* ===== CAMPO COM EMOJI PICKER ===== */
+        .input-with-emoji {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .input-with-emoji input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+        }
+        .input-with-emoji input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        .emoji-trigger {
+            font-size: 28px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .emoji-trigger:hover {
+            background: #f0f0f0;
+        }
+
+        /* ===== EMOJI PICKER POPUP ===== */
+        .emoji-picker {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            padding: 16px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 350px;
+            overflow-y: auto;
+            position: fixed;
+            z-index: 2000;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: slideUp 0.2s;
+        }
+        .emoji-picker.active {
+            display: block;
+        }
+        .emoji-picker-search {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .emoji-picker-search:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+        .emoji-item {
+            font-size: 24px;
+            padding: 6px 4px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.2s;
+            background: none;
+            border: none;
+        }
+        .emoji-item:hover {
+            background: #f0f0f0;
+            transform: scale(1.2);
+        }
+        .emoji-category {
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            margin: 10px 0 4px 0;
+            grid-column: 1 / -1;
+        }
+        .emoji-close {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 4px 0 8px 0;
+            display: flex;
+            justify-content: flex-end;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 8px;
+            z-index: 1;
+        }
+        .emoji-close button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            padding: 4px 8px;
+        }
+        .emoji-close button:hover {
+            color: #333;
+        }
+        .emoji-picker-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 1999;
+        }
+        .emoji-picker-overlay.active {
+            display: block;
+        }
+
         .modal-body input[type="time"], 
         .modal-body input[type="number"] { 
             width: 100%; 
@@ -473,6 +603,9 @@
             table { font-size: 15px; min-width: auto; }
             .table-wrapper { overflow-x: auto; }
             .activity-text { font-size: 14px; }
+            .emoji-grid {
+                grid-template-columns: repeat(10, 1fr);
+            }
         }
 
         @media (max-width: 400px) {
@@ -487,6 +620,12 @@
             .important-list li { font-size: 13px; padding: 8px 12px; }
             .modal-content { padding: 16px; }
             .modal-btn { padding: 10px 18px; font-size: 14px; }
+            .emoji-grid {
+                grid-template-columns: repeat(7, 1fr);
+            }
+            .emoji-item {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
@@ -631,6 +770,18 @@
     </div>
 </div>
 
+<!-- EMOJI PICKER OVERLAY -->
+<div class="emoji-picker-overlay" id="emojiOverlay" onclick="closeEmojiPicker()"></div>
+
+<!-- EMOJI PICKER -->
+<div class="emoji-picker" id="emojiPicker">
+    <div class="emoji-close">
+        <button onclick="closeEmojiPicker()">✕</button>
+    </div>
+    <input type="text" class="emoji-picker-search" id="emojiSearch" placeholder="🔍 Buscar emoji..." oninput="filterEmojis()">
+    <div class="emoji-grid" id="emojiGrid"></div>
+</div>
+
 <!-- MODAIS -->
 <div id="noteModal" class="modal">
     <div class="modal-content">
@@ -640,7 +791,10 @@
         </div>
         <div class="modal-body">
             <label id="noteLabel">✏️ Edite a atividade:</label>
-            <textarea id="noteText" placeholder="Digite aqui..."></textarea>
+            <div class="input-with-emoji">
+                <input type="text" id="editActivityName" placeholder="Digite aqui...">
+                <button class="emoji-trigger" onclick="openEmojiPicker('editActivityName')" title="Inserir emoji">😊</button>
+            </div>
             <label>⏱️ Duração (minutos):</label>
             <input type="number" id="editDuration" min="1" max="1440" value="60">
         </div>
@@ -659,7 +813,10 @@
         </div>
         <div class="modal-body">
             <label>Nome da Atividade:</label>
-            <input type="text" id="newActivityName" placeholder="Ex: 🧹 Limpeza">
+            <div class="input-with-emoji">
+                <input type="text" id="newActivityName" placeholder="Ex: 🧹 Limpeza">
+                <button class="emoji-trigger" onclick="openEmojiPicker('newActivityName')" title="Inserir emoji">😊</button>
+            </div>
             <label>Horário (HH:MM):</label>
             <input type="time" id="newActivityTime">
             <label>⏱️ Duração (minutos):</label>
@@ -696,109 +853,1136 @@
     let isSyncing = false;
 
     // ===================================================================
+    // EMOJI PICKER
+    // ===================================================================
+    const EMOJIS = {
+        '😀': 'Smileys',
+        '😁': 'Smileys',
+        '😂': 'Smileys',
+        '🤣': 'Smileys',
+        '😃': 'Smileys',
+        '😄': 'Smileys',
+        '😅': 'Smileys',
+        '😆': 'Smileys',
+        '😉': 'Smileys',
+        '😊': 'Smileys',
+        '😋': 'Smileys',
+        '😎': 'Smileys',
+        '😍': 'Smileys',
+        '🥰': 'Smileys',
+        '😘': 'Smileys',
+        '😗': 'Smileys',
+        '😙': 'Smileys',
+        '😚': 'Smileys',
+        '🥲': 'Smileys',
+        '😜': 'Smileys',
+        '😝': 'Smileys',
+        '😛': 'Smileys',
+        '🤑': 'Smileys',
+        '🤓': 'Smileys',
+        '😈': 'Smileys',
+        '👿': 'Smileys',
+        '👹': 'Smileys',
+        '👺': 'Smileys',
+        '💀': 'Smileys',
+        '👻': 'Smileys',
+        '👽': 'Smileys',
+        '🤖': 'Smileys',
+        '💩': 'Smileys',
+        '😺': 'Smileys',
+        '😸': 'Smileys',
+        '😻': 'Smileys',
+        '😽': 'Smileys',
+        '🙀': 'Smileys',
+        '🙈': 'Smileys',
+        '🙉': 'Smileys',
+        '🙊': 'Smileys',
+        '👋': 'Pessoas',
+        '🤚': 'Pessoas',
+        '✋': 'Pessoas',
+        '🖐️': 'Pessoas',
+        '🖖': 'Pessoas',
+        '👌': 'Pessoas',
+        '🤌': 'Pessoas',
+        '🤏': 'Pessoas',
+        '✌️': 'Pessoas',
+        '🤞': 'Pessoas',
+        '🤟': 'Pessoas',
+        '🤘': 'Pessoas',
+        '🤙': 'Pessoas',
+        '👈': 'Pessoas',
+        '👉': 'Pessoas',
+        '👆': 'Pessoas',
+        '🖕': 'Pessoas',
+        '👇': 'Pessoas',
+        '☝️': 'Pessoas',
+        '👍': 'Pessoas',
+        '👎': 'Pessoas',
+        '👊': 'Pessoas',
+        '✊': 'Pessoas',
+        '🤛': 'Pessoas',
+        '🤜': 'Pessoas',
+        '👏': 'Pessoas',
+        '🙌': 'Pessoas',
+        '👐': 'Pessoas',
+        '🤲': 'Pessoas',
+        '🤝': 'Pessoas',
+        '🙏': 'Pessoas',
+        '✍️': 'Pessoas',
+        '💅': 'Pessoas',
+        '🤳': 'Pessoas',
+        '💪': 'Pessoas',
+        '🦾': 'Pessoas',
+        '🦵': 'Pessoas',
+        '🦶': 'Pessoas',
+        '👂': 'Pessoas',
+        '🦻': 'Pessoas',
+        '👃': 'Pessoas',
+        '🧠': 'Pessoas',
+        '🫀': 'Pessoas',
+        '🫁': 'Pessoas',
+        '🦷': 'Pessoas',
+        '🦴': 'Pessoas',
+        '👀': 'Pessoas',
+        '👁️': 'Pessoas',
+        '👅': 'Pessoas',
+        '👄': 'Pessoas',
+        '🫦': 'Pessoas',
+        '👶': 'Pessoas',
+        '🧒': 'Pessoas',
+        '👦': 'Pessoas',
+        '👧': 'Pessoas',
+        '🧑': 'Pessoas',
+        '👨': 'Pessoas',
+        '👩': 'Pessoas',
+        '🧔': 'Pessoas',
+        '👨‍🦰': 'Pessoas',
+        '👩‍🦰': 'Pessoas',
+        '👨‍🦱': 'Pessoas',
+        '👩‍🦱': 'Pessoas',
+        '👨‍🦳': 'Pessoas',
+        '👩‍🦳': 'Pessoas',
+        '👨‍🦲': 'Pessoas',
+        '👩‍🦲': 'Pessoas',
+        '🧑‍🦰': 'Pessoas',
+        '🧑‍🦱': 'Pessoas',
+        '🧑‍🦳': 'Pessoas',
+        '🧑‍🦲': 'Pessoas',
+        '👱': 'Pessoas',
+        '👱‍♂️': 'Pessoas',
+        '👱‍♀️': 'Pessoas',
+        '🧔‍♂️': 'Pessoas',
+        '🧔‍♀️': 'Pessoas',
+        '👨‍🦰': 'Pessoas',
+        '👩‍🦰': 'Pessoas',
+        '👨‍🦱': 'Pessoas',
+        '👩‍🦱': 'Pessoas',
+        '👨‍🦳': 'Pessoas',
+        '👩‍🦳': 'Pessoas',
+        '👨‍🦲': 'Pessoas',
+        '👩‍🦲': 'Pessoas',
+        '👵': 'Pessoas',
+        '👴': 'Pessoas',
+        '🐶': 'Animais',
+        '🐱': 'Animais',
+        '🐭': 'Animais',
+        '🐹': 'Animais',
+        '🐰': 'Animais',
+        '🦊': 'Animais',
+        '🐻': 'Animais',
+        '🐼': 'Animais',
+        '🐨': 'Animais',
+        '🐯': 'Animais',
+        '🦁': 'Animais',
+        '🐮': 'Animais',
+        '🐷': 'Animais',
+        '🐽': 'Animais',
+        '🐸': 'Animais',
+        '🐵': 'Animais',
+        '🙈': 'Animais',
+        '🙉': 'Animais',
+        '🙊': 'Animais',
+        '🐒': 'Animais',
+        '🐔': 'Animais',
+        '🐧': 'Animais',
+        '🐦': 'Animais',
+        '🐤': 'Animais',
+        '🐣': 'Animais',
+        '🐥': 'Animais',
+        '🦆': 'Animais',
+        '🦅': 'Animais',
+        '🦉': 'Animais',
+        '🦇': 'Animais',
+        '🐺': 'Animais',
+        '🐗': 'Animais',
+        '🐴': 'Animais',
+        '🦄': 'Animais',
+        '🐝': 'Animais',
+        '🪱': 'Animais',
+        '🐛': 'Animais',
+        '🦋': 'Animais',
+        '🐌': 'Animais',
+        '🐞': 'Animais',
+        '🐜': 'Animais',
+        '🪰': 'Animais',
+        '🪲': 'Animais',
+        '🪳': 'Animais',
+        '🐢': 'Animais',
+        '🐍': 'Animais',
+        '🦎': 'Animais',
+        '🦖': 'Animais',
+        '🦕': 'Animais',
+        '🐙': 'Animais',
+        '🦑': 'Animais',
+        '🦐': 'Animais',
+        '🦀': 'Animais',
+        '🐡': 'Animais',
+        '🐠': 'Animais',
+        '🐟': 'Animais',
+        '🐬': 'Animais',
+        '🐳': 'Animais',
+        '🐋': 'Animais',
+        '🦈': 'Animais',
+        '🐊': 'Animais',
+        '🐅': 'Animais',
+        '🐆': 'Animais',
+        '🦓': 'Animais',
+        '🦍': 'Animais',
+        '🦧': 'Animais',
+        '🦣': 'Animais',
+        '🐘': 'Animais',
+        '🦛': 'Animais',
+        '🦏': 'Animais',
+        '🐪': 'Animais',
+        '🐫': 'Animais',
+        '🦒': 'Animais',
+        '🐃': 'Animais',
+        '🐂': 'Animais',
+        '🐄': 'Animais',
+        '🐎': 'Animais',
+        '🐖': 'Animais',
+        '🐏': 'Animais',
+        '🐑': 'Animais',
+        '🦙': 'Animais',
+        '🐐': 'Animais',
+        '🦌': 'Animais',
+        '🐕': 'Animais',
+        '🐩': 'Animais',
+        '🦮': 'Animais',
+        '🐕‍🦺': 'Animais',
+        '🐈': 'Animais',
+        '🐈‍⬛': 'Animais',
+        '🪶': 'Animais',
+        '🐓': 'Animais',
+        '🦃': 'Animais',
+        '🕊️': 'Animais',
+        '🐇': 'Animais',
+        '🦝': 'Animais',
+        '🦨': 'Animais',
+        '🦡': 'Animais',
+        '🦫': 'Animais',
+        '🦦': 'Animais',
+        '🦥': 'Animais',
+        '🐁': 'Animais',
+        '🐀': 'Animais',
+        '🐿️': 'Animais',
+        '🦔': 'Animais',
+        '🍎': 'Comida',
+        '🍐': 'Comida',
+        '🍊': 'Comida',
+        '🍋': 'Comida',
+        '🍌': 'Comida',
+        '🍉': 'Comida',
+        '🍇': 'Comida',
+        '🍓': 'Comida',
+        '🫐': 'Comida',
+        '🍈': 'Comida',
+        '🍒': 'Comida',
+        '🍑': 'Comida',
+        '🥭': 'Comida',
+        '🍍': 'Comida',
+        '🥥': 'Comida',
+        '🥝': 'Comida',
+        '🍅': 'Comida',
+        '🍆': 'Comida',
+        '🥑': 'Comida',
+        '🫑': 'Comida',
+        '🥬': 'Comida',
+        '🥒': 'Comida',
+        '🌶️': 'Comida',
+        '🫚': 'Comida',
+        '🧄': 'Comida',
+        '🧅': 'Comida',
+        '🥕': 'Comida',
+        '🌽': 'Comida',
+        '🥔': 'Comida',
+        '🍠': 'Comida',
+        '🥐': 'Comida',
+        '🥖': 'Comida',
+        '🫓': 'Comida',
+        '🥨': 'Comida',
+        '🥯': 'Comida',
+        '🥞': 'Comida',
+        '🧇': 'Comida',
+        '🧀': 'Comida',
+        '🍖': 'Comida',
+        '🍗': 'Comida',
+        '🥩': 'Comida',
+        '🥓': 'Comida',
+        '🍔': 'Comida',
+        '🍟': 'Comida',
+        '🍕': 'Comida',
+        '🌭': 'Comida',
+        '🥪': 'Comida',
+        '🌮': 'Comida',
+        '🌯': 'Comida',
+        '🫔': 'Comida',
+        '🥙': 'Comida',
+        '🧆': 'Comida',
+        '🥚': 'Comida',
+        '🍳': 'Comida',
+        '🥘': 'Comida',
+        '🍲': 'Comida',
+        '🫕': 'Comida',
+        '🥣': 'Comida',
+        '🥗': 'Comida',
+        '🍿': 'Comida',
+        '🧈': 'Comida',
+        '🧂': 'Comida',
+        '🥫': 'Comida',
+        '🍱': 'Comida',
+        '🍘': 'Comida',
+        '🍙': 'Comida',
+        '🍚': 'Comida',
+        '🍛': 'Comida',
+        '🍜': 'Comida',
+        '🍝': 'Comida',
+        '🍠': 'Comida',
+        '🍢': 'Comida',
+        '🍣': 'Comida',
+        '🍤': 'Comida',
+        '🍥': 'Comida',
+        '🥮': 'Comida',
+        '🍡': 'Comida',
+        '🥟': 'Comida',
+        '🥠': 'Comida',
+        '🥡': 'Comida',
+        '🦪': 'Comida',
+        '🍦': 'Comida',
+        '🍧': 'Comida',
+        '🍨': 'Comida',
+        '🍩': 'Comida',
+        '🍪': 'Comida',
+        '🎂': 'Comida',
+        '🍰': 'Comida',
+        '🧁': 'Comida',
+        '🥧': 'Comida',
+        '🍫': 'Comida',
+        '🍬': 'Comida',
+        '🍭': 'Comida',
+        '🍮': 'Comida',
+        '🍯': 'Comida',
+        '🥛': 'Comida',
+        '🍼': 'Comida',
+        '🫗': 'Comida',
+        '☕': 'Comida',
+        '🫖': 'Comida',
+        '🍵': 'Comida',
+        '🍶': 'Comida',
+        '🍾': 'Comida',
+        '🍷': 'Comida',
+        '🍸': 'Comida',
+        '🍹': 'Comida',
+        '🍺': 'Comida',
+        '🍻': 'Comida',
+        '🥂': 'Comida',
+        '🥃': 'Comida',
+        '🫧': 'Comida',
+        '🥤': 'Comida',
+        '🧃': 'Comida',
+        '🧉': 'Comida',
+        '🧊': 'Comida',
+        '⚽': 'Atividades',
+        '🏀': 'Atividades',
+        '🏈': 'Atividades',
+        '⚾': 'Atividades',
+        '🥎': 'Atividades',
+        '🎾': 'Atividades',
+        '🏐': 'Atividades',
+        '🏉': 'Atividades',
+        '🥏': 'Atividades',
+        '🎱': 'Atividades',
+        '🪀': 'Atividades',
+        '🏓': 'Atividades',
+        '🏸': 'Atividades',
+        '🏒': 'Atividades',
+        '🏑': 'Atividades',
+        '🥍': 'Atividades',
+        '🏏': 'Atividades',
+        '🥅': 'Atividades',
+        '⛳': 'Atividades',
+        '🪁': 'Atividades',
+        '🏹': 'Atividades',
+        '🎣': 'Atividades',
+        '🤿': 'Atividades',
+        '🥊': 'Atividades',
+        '🥋': 'Atividades',
+        '🎽': 'Atividades',
+        '🛹': 'Atividades',
+        '🛼': 'Atividades',
+        '🪂': 'Atividades',
+        '⛷️': 'Atividades',
+        '🏂': 'Atividades',
+        '🏋️': 'Atividades',
+        '🤼': 'Atividades',
+        '🤸': 'Atividades',
+        '⛹️': 'Atividades',
+        '🤾': 'Atividades',
+        '🏌️': 'Atividades',
+        '🏇': 'Atividades',
+        '🧘': 'Atividades',
+        '🏄': 'Atividades',
+        '🏊': 'Atividades',
+        '🤽': 'Atividades',
+        '🚣': 'Atividades',
+        '🧗': 'Atividades',
+        '🚵': 'Atividades',
+        '🚴': 'Atividades',
+        '🪄': 'Atividades',
+        '🪅': 'Atividades',
+        '🎭': 'Atividades',
+        '🎨': 'Atividades',
+        '🎪': 'Atividades',
+        '🎟️': 'Atividades',
+        '🎫': 'Atividades',
+        '🎖️': 'Atividades',
+        '🏆': 'Atividades',
+        '🏅': 'Atividades',
+        '🥇': 'Atividades',
+        '🥈': 'Atividades',
+        '🥉': 'Atividades',
+        '🌍': 'Viagens',
+        '🌎': 'Viagens',
+        '🌏': 'Viagens',
+        '🌕': 'Viagens',
+        '🌖': 'Viagens',
+        '🌗': 'Viagens',
+        '🌘': 'Viagens',
+        '🌑': 'Viagens',
+        '🌒': 'Viagens',
+        '🌓': 'Viagens',
+        '🌔': 'Viagens',
+        '🌙': 'Viagens',
+        '🌚': 'Viagens',
+        '🌛': 'Viagens',
+        '🌜': 'Viagens',
+        '☀️': 'Viagens',
+        '🌤️': 'Viagens',
+        '🌥️': 'Viagens',
+        '🌦️': 'Viagens',
+        '🌧️': 'Viagens',
+        '🌨️': 'Viagens',
+        '🌩️': 'Viagens',
+        '🌪️': 'Viagens',
+        '🌫️': 'Viagens',
+        '🌬️': 'Viagens',
+        '🌈': 'Viagens',
+        '☂️': 'Viagens',
+        '☔': 'Viagens',
+        '⛄': 'Viagens',
+        '❄️': 'Viagens',
+        '🔥': 'Viagens',
+        '💧': 'Viagens',
+        '🌊': 'Viagens',
+        '🧭': 'Viagens',
+        '🏔️': 'Viagens',
+        '⛰️': 'Viagens',
+        '🌋': 'Viagens',
+        '🗻': 'Viagens',
+        '🏕️': 'Viagens',
+        '🏖️': 'Viagens',
+        '🏜️': 'Viagens',
+        '🏝️': 'Viagens',
+        '🏞️': 'Viagens',
+        '🏟️': 'Viagens',
+        '🏛️': 'Viagens',
+        '🏗️': 'Viagens',
+        '🧱': 'Viagens',
+        '🪨': 'Viagens',
+        '🪵': 'Viagens',
+        '🛖': 'Viagens',
+        '🏘️': 'Viagens',
+        '🏚️': 'Viagens',
+        '🏠': 'Viagens',
+        '🏡': 'Viagens',
+        '🏢': 'Viagens',
+        '🏣': 'Viagens',
+        '🏤': 'Viagens',
+        '🏥': 'Viagens',
+        '🏦': 'Viagens',
+        '🏨': 'Viagens',
+        '🏩': 'Viagens',
+        '🏪': 'Viagens',
+        '🏫': 'Viagens',
+        '🏬': 'Viagens',
+        '🏭': 'Viagens',
+        '🏯': 'Viagens',
+        '🏰': 'Viagens',
+        '💒': 'Viagens',
+        '🗼': 'Viagens',
+        '🗽': 'Viagens',
+        '⛪': 'Viagens',
+        '🕌': 'Viagens',
+        '🛕': 'Viagens',
+        '🕍': 'Viagens',
+        '⛩️': 'Viagens',
+        '🕋': 'Viagens',
+        '⛲': 'Viagens',
+        '⛺': 'Viagens',
+        '🌁': 'Viagens',
+        '🌃': 'Viagens',
+        '🏙️': 'Viagens',
+        '🌄': 'Viagens',
+        '🌅': 'Viagens',
+        '🌆': 'Viagens',
+        '🌇': 'Viagens',
+        '🌉': 'Viagens',
+        '🎠': 'Viagens',
+        '🎡': 'Viagens',
+        '🎢': 'Viagens',
+        '💈': 'Viagens',
+        '🎪': 'Viagens',
+        '🚂': 'Viagens',
+        '🚃': 'Viagens',
+        '🚄': 'Viagens',
+        '🚅': 'Viagens',
+        '🚆': 'Viagens',
+        '🚇': 'Viagens',
+        '🚈': 'Viagens',
+        '🚉': 'Viagens',
+        '🚊': 'Viagens',
+        '🚝': 'Viagens',
+        '🚞': 'Viagens',
+        '🚋': 'Viagens',
+        '🚌': 'Viagens',
+        '🚍': 'Viagens',
+        '🚎': 'Viagens',
+        '🚐': 'Viagens',
+        '🚑': 'Viagens',
+        '🚒': 'Viagens',
+        '🚓': 'Viagens',
+        '🚔': 'Viagens',
+        '🚕': 'Viagens',
+        '🚖': 'Viagens',
+        '🚗': 'Viagens',
+        '🚘': 'Viagens',
+        '🚙': 'Viagens',
+        '🛻': 'Viagens',
+        '🚚': 'Viagens',
+        '🚛': 'Viagens',
+        '🚜': 'Viagens',
+        '🏎️': 'Viagens',
+        '🏍️': 'Viagens',
+        '🛵': 'Viagens',
+        '🦽': 'Viagens',
+        '🦼': 'Viagens',
+        '🛴': 'Viagens',
+        '🚲': 'Viagens',
+        '🛹': 'Viagens',
+        '🛼': 'Viagens',
+        '🚁': 'Viagens',
+        '✈️': 'Viagens',
+        '🛩️': 'Viagens',
+        '🛫': 'Viagens',
+        '🛬': 'Viagens',
+        '🪂': 'Viagens',
+        '💺': 'Viagens',
+        '🚀': 'Viagens',
+        '🛸': 'Viagens',
+        '🛶': 'Viagens',
+        '🚢': 'Viagens',
+        '🛟': 'Viagens',
+        '🎃': 'Objetos',
+        '🎄': 'Objetos',
+        '🎆': 'Objetos',
+        '🎇': 'Objetos',
+        '🧨': 'Objetos',
+        '✨': 'Objetos',
+        '🎈': 'Objetos',
+        '🎉': 'Objetos',
+        '🎊': 'Objetos',
+        '🎋': 'Objetos',
+        '🎍': 'Objetos',
+        '🎎': 'Objetos',
+        '🎏': 'Objetos',
+        '🎐': 'Objetos',
+        '🎑': 'Objetos',
+        '🧧': 'Objetos',
+        '🎀': 'Objetos',
+        '🎁': 'Objetos',
+        '🎗️': 'Objetos',
+        '🎟️': 'Objetos',
+        '🎫': 'Objetos',
+        '🎖️': 'Objetos',
+        '🏆': 'Objetos',
+        '🏅': 'Objetos',
+        '🥇': 'Objetos',
+        '🥈': 'Objetos',
+        '🥉': 'Objetos',
+        '⚽': 'Objetos',
+        '🏀': 'Objetos',
+        '🏈': 'Objetos',
+        '⚾': 'Objetos',
+        '🥎': 'Objetos',
+        '🎾': 'Objetos',
+        '🏐': 'Objetos',
+        '🏉': 'Objetos',
+        '🥏': 'Objetos',
+        '🎱': 'Objetos',
+        '🪀': 'Objetos',
+        '🏓': 'Objetos',
+        '🏸': 'Objetos',
+        '🏒': 'Objetos',
+        '🏑': 'Objetos',
+        '🥍': 'Objetos',
+        '🏏': 'Objetos',
+        '🥅': 'Objetos',
+        '⛳': 'Objetos',
+        '🪁': 'Objetos',
+        '🏹': 'Objetos',
+        '🎣': 'Objetos',
+        '🤿': 'Objetos',
+        '🥊': 'Objetos',
+        '🥋': 'Objetos',
+        '🎽': 'Objetos',
+        '🛹': 'Objetos',
+        '🛼': 'Objetos',
+        '🪂': 'Objetos',
+        '⛷️': 'Objetos',
+        '🏂': 'Objetos',
+        '🏋️': 'Objetos',
+        '🤼': 'Objetos',
+        '🤸': 'Objetos',
+        '⛹️': 'Objetos',
+        '🤾': 'Objetos',
+        '🏌️': 'Objetos',
+        '🏇': 'Objetos',
+        '🧘': 'Objetos',
+        '🏄': 'Objetos',
+        '🏊': 'Objetos',
+        '🤽': 'Objetos',
+        '🚣': 'Objetos',
+        '🧗': 'Objetos',
+        '🚵': 'Objetos',
+        '🚴': 'Objetos',
+        '🪄': 'Objetos',
+        '🪅': 'Objetos',
+        '🎭': 'Objetos',
+        '🎨': 'Objetos',
+        '🎪': 'Objetos',
+        '🎟️': 'Objetos',
+        '🎫': 'Objetos',
+        '🎖️': 'Objetos',
+        '🏆': 'Objetos',
+        '🏅': 'Objetos',
+        '🥇': 'Objetos',
+        '🥈': 'Objetos',
+        '🥉': 'Objetos',
+        '💄': 'Objetos',
+        '💋': 'Objetos',
+        '👄': 'Objetos',
+        '🦷': 'Objetos',
+        '🦴': 'Objetos',
+        '👀': 'Objetos',
+        '👁️': 'Objetos',
+        '👅': 'Objetos',
+        '👄': 'Objetos',
+        '🫦': 'Objetos',
+        '🔞': 'Símbolos',
+        '📵': 'Símbolos',
+        '🚭': 'Símbolos',
+        '🚯': 'Símbolos',
+        '🚱': 'Símbolos',
+        '🚷': 'Símbolos',
+        '📛': 'Símbolos',
+        '🉑': 'Símbolos',
+        '🉐': 'Símbolos',
+        '㊙️': 'Símbolos',
+        '㊗️': 'Símbolos',
+        '🈴': 'Símbolos',
+        '🈵': 'Símbolos',
+        '🈹': 'Símbolos',
+        '🈲': 'Símbolos',
+        '🈶': 'Símbolos',
+        '🈚': 'Símbolos',
+        '🈸': 'Símbolos',
+        '🈺': 'Símbolos',
+        '🈷️': 'Símbolos',
+        '🈳': 'Símbolos',
+        '🈂️': 'Símbolos',
+        '🈯': 'Símbolos',
+        '🈴': 'Símbolos',
+        '🈵': 'Símbolos',
+        '🈹': 'Símbolos',
+        '🈲': 'Símbolos',
+        '🈶': 'Símbolos',
+        '🈚': 'Símbolos',
+        '🈸': 'Símbolos',
+        '🈺': 'Símbolos',
+        '🈷️': 'Símbolos',
+        '🈳': 'Símbolos',
+        '🈂️': 'Símbolos',
+        '🈯': 'Símbolos',
+        '🏳️': 'Bandeiras',
+        '🏴': 'Bandeiras',
+        '🏁': 'Bandeiras',
+        '🚩': 'Bandeiras',
+        '🎌': 'Bandeiras',
+        '🏳️‍🌈': 'Bandeiras',
+        '🏳️‍⚧️': 'Bandeiras',
+        '🏴‍☠️': 'Bandeiras',
+        '🇦🇨': 'Bandeiras',
+        '🇦🇩': 'Bandeiras',
+        '🇦🇪': 'Bandeiras',
+        '🇦🇫': 'Bandeiras',
+        '🇦🇬': 'Bandeiras',
+        '🇦🇮': 'Bandeiras',
+        '🇦🇱': 'Bandeiras',
+        '🇦🇲': 'Bandeiras',
+        '🇦🇴': 'Bandeiras',
+        '🇦🇶': 'Bandeiras',
+        '🇦🇷': 'Bandeiras',
+        '🇦🇸': 'Bandeiras',
+        '🇦🇹': 'Bandeiras',
+        '🇦🇺': 'Bandeiras',
+        '🇦🇼': 'Bandeiras',
+        '🇦🇽': 'Bandeiras',
+        '🇦🇿': 'Bandeiras',
+        '🇧🇦': 'Bandeiras',
+        '🇧🇧': 'Bandeiras',
+        '🇧🇩': 'Bandeiras',
+        '🇧🇪': 'Bandeiras',
+        '🇧🇫': 'Bandeiras',
+        '🇧🇬': 'Bandeiras',
+        '🇧🇭': 'Bandeiras',
+        '🇧🇮': 'Bandeiras',
+        '🇧🇯': 'Bandeiras',
+        '🇧🇱': 'Bandeiras',
+        '🇧🇲': 'Bandeiras',
+        '🇧🇳': 'Bandeiras',
+        '🇧🇴': 'Bandeiras',
+        '🇧🇶': 'Bandeiras',
+        '🇧🇷': 'Bandeiras',
+        '🇧🇸': 'Bandeiras',
+        '🇧🇹': 'Bandeiras',
+        '🇧🇻': 'Bandeiras',
+        '🇧🇼': 'Bandeiras',
+        '🇧🇾': 'Bandeiras',
+        '🇧🇿': 'Bandeiras',
+        '🇨🇦': 'Bandeiras',
+        '🇨🇨': 'Bandeiras',
+        '🇨🇩': 'Bandeiras',
+        '🇨🇫': 'Bandeiras',
+        '🇨🇬': 'Bandeiras',
+        '🇨🇭': 'Bandeiras',
+        '🇨🇮': 'Bandeiras',
+        '🇨🇰': 'Bandeiras',
+        '🇨🇱': 'Bandeiras',
+        '🇨🇲': 'Bandeiras',
+        '🇨🇳': 'Bandeiras',
+        '🇨🇴': 'Bandeiras',
+        '🇨🇵': 'Bandeiras',
+        '🇨🇷': 'Bandeiras',
+        '🇨🇺': 'Bandeiras',
+        '🇨🇻': 'Bandeiras',
+        '🇨🇼': 'Bandeiras',
+        '🇨🇽': 'Bandeiras',
+        '🇨🇾': 'Bandeiras',
+        '🇨🇿': 'Bandeiras',
+        '🇩🇪': 'Bandeiras',
+        '🇩🇬': 'Bandeiras',
+        '🇩🇯': 'Bandeiras',
+        '🇩🇰': 'Bandeiras',
+        '🇩🇲': 'Bandeiras',
+        '🇩🇴': 'Bandeiras',
+        '🇩🇿': 'Bandeiras',
+        '🇪🇨': 'Bandeiras',
+        '🇪🇪': 'Bandeiras',
+        '🇪🇬': 'Bandeiras',
+        '🇪🇭': 'Bandeiras',
+        '🇪🇷': 'Bandeiras',
+        '🇪🇸': 'Bandeiras',
+        '🇪🇹': 'Bandeiras',
+        '🇪🇺': 'Bandeiras',
+        '🇫🇮': 'Bandeiras',
+        '🇫🇯': 'Bandeiras',
+        '🇫🇰': 'Bandeiras',
+        '🇫🇲': 'Bandeiras',
+        '🇫🇴': 'Bandeiras',
+        '🇫🇷': 'Bandeiras',
+        '🇬🇦': 'Bandeiras',
+        '🇬🇧': 'Bandeiras',
+        '🇬🇩': 'Bandeiras',
+        '🇬🇪': 'Bandeiras',
+        '🇬🇫': 'Bandeiras',
+        '🇬🇬': 'Bandeiras',
+        '🇬🇭': 'Bandeiras',
+        '🇬🇮': 'Bandeiras',
+        '🇬🇱': 'Bandeiras',
+        '🇬🇲': 'Bandeiras',
+        '🇬🇳': 'Bandeiras',
+        '🇬🇵': 'Bandeiras',
+        '🇬🇶': 'Bandeiras',
+        '🇬🇷': 'Bandeiras',
+        '🇬🇸': 'Bandeiras',
+        '🇬🇹': 'Bandeiras',
+        '🇬🇺': 'Bandeiras',
+        '🇬🇼': 'Bandeiras',
+        '🇬🇾': 'Bandeiras',
+        '🇭🇰': 'Bandeiras',
+        '🇭🇲': 'Bandeiras',
+        '🇭🇳': 'Bandeiras',
+        '🇭🇷': 'Bandeiras',
+        '🇭🇹': 'Bandeiras',
+        '🇭🇺': 'Bandeiras',
+        '🇮🇨': 'Bandeiras',
+        '🇮🇩': 'Bandeiras',
+        '🇮🇪': 'Bandeiras',
+        '🇮🇱': 'Bandeiras',
+        '🇮🇲': 'Bandeiras',
+        '🇮🇳': 'Bandeiras',
+        '🇮🇴': 'Bandeiras',
+        '🇮🇶': 'Bandeiras',
+        '🇮🇷': 'Bandeiras',
+        '🇮🇸': 'Bandeiras',
+        '🇮🇹': 'Bandeiras',
+        '🇯🇪': 'Bandeiras',
+        '🇯🇲': 'Bandeiras',
+        '🇯🇴': 'Bandeiras',
+        '🇯🇵': 'Bandeiras',
+        '🇰🇪': 'Bandeiras',
+        '🇰🇬': 'Bandeiras',
+        '🇰🇭': 'Bandeiras',
+        '🇰🇮': 'Bandeiras',
+        '🇰🇲': 'Bandeiras',
+        '🇰🇳': 'Bandeiras',
+        '🇰🇵': 'Bandeiras',
+        '🇰🇷': 'Bandeiras',
+        '🇰🇼': 'Bandeiras',
+        '🇰🇾': 'Bandeiras',
+        '🇰🇿': 'Bandeiras',
+        '🇱🇦': 'Bandeiras',
+        '🇱🇧': 'Bandeiras',
+        '🇱🇨': 'Bandeiras',
+        '🇱🇮': 'Bandeiras',
+        '🇱🇰': 'Bandeiras',
+        '🇱🇷': 'Bandeiras',
+        '🇱🇸': 'Bandeiras',
+        '🇱🇹': 'Bandeiras',
+        '🇱🇺': 'Bandeiras',
+        '🇱🇻': 'Bandeiras',
+        '🇱🇾': 'Bandeiras',
+        '🇲🇦': 'Bandeiras',
+        '🇲🇨': 'Bandeiras',
+        '🇲🇩': 'Bandeiras',
+        '🇲🇪': 'Bandeiras',
+        '🇲🇫': 'Bandeiras',
+        '🇲🇬': 'Bandeiras',
+        '🇲🇭': 'Bandeiras',
+        '🇲🇰': 'Bandeiras',
+        '🇲🇱': 'Bandeiras',
+        '🇲🇲': 'Bandeiras',
+        '🇲🇳': 'Bandeiras',
+        '🇲🇴': 'Bandeiras',
+        '🇲🇵': 'Bandeiras',
+        '🇲🇶': 'Bandeiras',
+        '🇲🇷': 'Bandeiras',
+        '🇲🇸': 'Bandeiras',
+        '🇲🇹': 'Bandeiras',
+        '🇲🇺': 'Bandeiras',
+        '🇲🇻': 'Bandeiras',
+        '🇲🇼': 'Bandeiras',
+        '🇲🇽': 'Bandeiras',
+        '🇲🇾': 'Bandeiras',
+        '🇲🇿': 'Bandeiras',
+        '🇳🇦': 'Bandeiras',
+        '🇳🇨': 'Bandeiras',
+        '🇳🇪': 'Bandeiras',
+        '🇳🇫': 'Bandeiras',
+        '🇳🇬': 'Bandeiras',
+        '🇳🇮': 'Bandeiras',
+        '🇳🇱': 'Bandeiras',
+        '🇳🇴': 'Bandeiras',
+        '🇳🇵': 'Bandeiras',
+        '🇳🇷': 'Bandeiras',
+        '🇳🇺': 'Bandeiras',
+        '🇳🇿': 'Bandeiras',
+        '🇴🇲': 'Bandeiras',
+        '🇵🇦': 'Bandeiras',
+        '🇵🇪': 'Bandeiras',
+        '🇵🇫': 'Bandeiras',
+        '🇵🇬': 'Bandeiras',
+        '🇵🇭': 'Bandeiras',
+        '🇵🇰': 'Bandeiras',
+        '🇵🇱': 'Bandeiras',
+        '🇵🇲': 'Bandeiras',
+        '🇵🇳': 'Bandeiras',
+        '🇵🇷': 'Bandeiras',
+        '🇵🇸': 'Bandeiras',
+        '🇵🇹': 'Bandeiras',
+        '🇵🇼': 'Bandeiras',
+        '🇵🇾': 'Bandeiras',
+        '🇶🇦': 'Bandeiras',
+        '🇷🇪': 'Bandeiras',
+        '🇷🇴': 'Bandeiras',
+        '🇷🇸': 'Bandeiras',
+        '🇷🇺': 'Bandeiras',
+        '🇷🇼': 'Bandeiras',
+        '🇸🇦': 'Bandeiras',
+        '🇸🇧': 'Bandeiras',
+        '🇸🇨': 'Bandeiras',
+        '🇸🇩': 'Bandeiras',
+        '🇸🇪': 'Bandeiras',
+        '🇸🇬': 'Bandeiras',
+        '🇸🇭': 'Bandeiras',
+        '🇸🇮': 'Bandeiras',
+        '🇸🇯': 'Bandeiras',
+        '🇸🇰': 'Bandeiras',
+        '🇸🇱': 'Bandeiras',
+        '🇸🇲': 'Bandeiras',
+        '🇸🇳': 'Bandeiras',
+        '🇸🇴': 'Bandeiras',
+        '🇸🇷': 'Bandeiras',
+        '🇸🇸': 'Bandeiras',
+        '🇸🇹': 'Bandeiras',
+        '🇸🇻': 'Bandeiras',
+        '🇸🇽': 'Bandeiras',
+        '🇸🇾': 'Bandeiras',
+        '🇸🇿': 'Bandeiras',
+        '🇹🇦': 'Bandeiras',
+        '🇹🇨': 'Bandeiras',
+        '🇹🇩': 'Bandeiras',
+        '🇹🇫': 'Bandeiras',
+        '🇹🇬': 'Bandeiras',
+        '🇹🇭': 'Bandeiras',
+        '🇹🇯': 'Bandeiras',
+        '🇹🇰': 'Bandeiras',
+        '🇹🇱': 'Bandeiras',
+        '🇹🇲': 'Bandeiras',
+        '🇹🇳': 'Bandeiras',
+        '🇹🇴': 'Bandeiras',
+        '🇹🇷': 'Bandeiras',
+        '🇹🇹': 'Bandeiras',
+        '🇹🇻': 'Bandeiras',
+        '🇹🇼': 'Bandeiras',
+        '🇹🇿': 'Bandeiras',
+        '🇺🇦': 'Bandeiras',
+        '🇺🇬': 'Bandeiras',
+        '🇺🇲': 'Bandeiras',
+        '🇺🇳': 'Bandeiras',
+        '🇺🇸': 'Bandeiras',
+        '🇺🇾': 'Bandeiras',
+        '🇺🇿': 'Bandeiras',
+        '🇻🇦': 'Bandeiras',
+        '🇻🇨': 'Bandeiras',
+        '🇻🇪': 'Bandeiras',
+        '🇻🇬': 'Bandeiras',
+        '🇻🇮': 'Bandeiras',
+        '🇻🇳': 'Bandeiras',
+        '🇻🇺': 'Bandeiras',
+        '🇼🇫': 'Bandeiras',
+        '🇼🇸': 'Bandeiras',
+        '🇽🇰': 'Bandeiras',
+        '🇾🇪': 'Bandeiras',
+        '🇾🇹': 'Bandeiras',
+        '🇿🇦': 'Bandeiras',
+        '🇿🇲': 'Bandeiras',
+        '🇿🇼': 'Bandeiras',
+    };
+
+    let currentEmojiTarget = null;
+
+    function openEmojiPicker(targetId) {
+        currentEmojiTarget = targetId;
+        document.getElementById('emojiPicker').classList.add('active');
+        document.getElementById('emojiOverlay').classList.add('active');
+        document.getElementById('emojiSearch').value = '';
+        renderEmojis(Object.keys(EMOJIS));
+        document.getElementById('emojiSearch').focus();
+    }
+
+    function closeEmojiPicker() {
+        document.getElementById('emojiPicker').classList.remove('active');
+        document.getElementById('emojiOverlay').classList.remove('active');
+        currentEmojiTarget = null;
+    }
+
+    function renderEmojis(emojiList) {
+        const grid = document.getElementById('emojiGrid');
+        grid.innerHTML = '';
+        let lastCategory = '';
+        emojiList.forEach(emoji => {
+            const category = EMOJIS[emoji] || 'Outros';
+            if (category !== lastCategory) {
+                lastCategory = category;
+                const catLabel = document.createElement('div');
+                catLabel.className = 'emoji-category';
+                catLabel.textContent = category;
+                grid.appendChild(catLabel);
+            }
+            const btn = document.createElement('button');
+            btn.className = 'emoji-item';
+            btn.textContent = emoji;
+            btn.onclick = () => insertEmoji(emoji);
+            grid.appendChild(btn);
+        });
+        if (emojiList.length === 0) {
+            const empty = document.createElement('div');
+            empty.style.gridColumn = '1 / -1';
+            empty.style.textAlign = 'center';
+            empty.style.padding = '20px';
+            empty.style.color = '#999';
+            empty.textContent = 'Nenhum emoji encontrado';
+            grid.appendChild(empty);
+        }
+    }
+
+    function filterEmojis() {
+        const search = document.getElementById('emojiSearch').value.toLowerCase();
+        const filtered = Object.keys(EMOJIS).filter(emoji => 
+            emoji.includes(search) || 
+            EMOJIS[emoji].toLowerCase().includes(search) ||
+            emoji.toLowerCase().includes(search)
+        );
+        renderEmojis(filtered);
+    }
+
+    function insertEmoji(emoji) {
+        if (currentEmojiTarget) {
+            const input = document.getElementById(currentEmojiTarget);
+            if (input) {
+                const cursorPos = input.selectionStart || input.value.length;
+                const textBefore = input.value.substring(0, cursorPos);
+                const textAfter = input.value.substring(cursorPos);
+                input.value = textBefore + emoji + textAfter;
+                input.focus();
+                input.selectionStart = input.selectionEnd = cursorPos + emoji.length;
+            }
+        }
+        closeEmojiPicker();
+    }
+
+    // Fechar com Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeEmojiPicker();
+        }
+    });
+
+    // ===================================================================
     // MODELO DE ROTINA
     // ===================================================================
     const DEFAULT_ROUTINE = {
         segunda: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "08:00", activity: "🌅 Acordar, banho e escovar os dentes", duration: 30 },
+            { time: "08:30", activity: "🧘 Ioga e meditação", duration: 60 },
+            { time: "09:30", activity: "🥞 Café da manhã", duration: 30 },
             { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
+            { time: "10:15", activity: "💼 Busca por emprego", duration: 120 },
+            { time: "12:15", activity: "🍲 Almoço", duration: 60 },
+            { time: "14:00", activity: "🐱 Limpeza da caixa de areia", duration: 30 },
+            { time: "16:00", activity: "🏋️ Exercício físico", duration: 60 },
+            { time: "17:00", activity: "📚 Estudos", duration: 90 },
             { time: "18:45", activity: "🧺 Transferir roupas", duration: 30 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação", duration: 30 }
+            { time: "19:00", activity: "🍽️ Jantar", duration: 60 },
+            { time: "20:00", activity: "📖 Leitura", duration: 30 },
+            { time: "20:30", activity: "🎮 Lazer", duration: 60 },
+            { time: "21:30", activity: "🧹 Arrumação", duration: 30 }
         ],
         terca: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "08:00", activity: "🌅 Acordar, banho e escovar os dentes", duration: 30 },
+            { time: "08:30", activity: "🧘 Ioga e meditação", duration: 60 },
+            { time: "09:30", activity: "🥞 Café da manhã", duration: 30 },
             { time: "09:40", activity: "🧼 Colocar toalhas na máquina", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
+            { time: "10:15", activity: "💼 Busca por emprego", duration: 120 },
+            { time: "12:15", activity: "🍲 Almoço", duration: 60 },
+            { time: "14:00", activity: "🐱 Limpeza da caixa de areia", duration: 30 },
+            { time: "16:00", activity: "🏋️ Exercício físico", duration: 60 },
+            { time: "17:00", activity: "📚 Estudos", duration: 90 },
             { time: "18:45", activity: "🧼 Pendurar toalhas", duration: 30 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação", duration: 30 }
+            { time: "19:00", activity: "🍽️ Jantar", duration: 60 },
+            { time: "20:00", activity: "📖 Leitura", duration: 30 },
+            { time: "20:30", activity: "🎮 Lazer", duration: 60 },
+            { time: "21:30", activity: "🧹 Arrumação", duration: 30 }
         ],
         quarta: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
+            { time: "08:00", activity: "🌅 Acordar, banho e escovar os dentes", duration: 30 },
+            { time: "08:30", activity: "🧘 Ioga e meditação", duration: 60 },
+            { time: "09:30", activity: "🥞 Café da manhã", duration: 30 },
+            { time: "10:15", activity: "💼 Busca por emprego", duration: 120 },
+            { time: "12:15", activity: "🍲 Almoço", duration: 60 },
+            { time: "14:00", activity: "🐱 Limpeza da caixa de areia", duration: 30 },
             { time: "15:00", activity: "🧹 Limpeza do piso", duration: 60 },
             { time: "16:00", activity: "🐱 Troca da areia dos gatos", duration: 45 },
-            { time: "16:45", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação", duration: 30 }
+            { time: "16:45", activity: "🏋️ Exercício físico", duration: 60 },
+            { time: "17:00", activity: "📚 Estudos", duration: 90 },
+            { time: "19:00", activity: "🍽️ Jantar", duration: 60 },
+            { time: "20:00", activity: "📖 Leitura", duration: 30 },
+            { time: "20:30", activity: "🎮 Lazer", duration: 60 },
+            { time: "21:30", activity: "🧹 Arrumação", duration: 30 }
         ],
         quinta: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "08:00", activity: "🌅 Acordar, banho e escovar os dentes", duration: 30 },
+            { time: "08:30", activity: "🧘 Ioga e meditação", duration: 60 },
+            { time: "09:30", activity: "🥞 Café da manhã", duration: 30 },
             { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
+            { time: "10:15", activity: "💼 Busca por emprego", duration: 120 },
+            { time: "12:15", activity: "🍲 Almoço", duration: 60 },
+            { time: "14:00", activity: "🐱 Limpeza da caixa de areia", duration: 30 },
+            { time: "16:00", activity: "🏋️ Exercício físico", duration: 60 },
+            { time: "17:00", activity: "📚 Estudos", duration: 90 },
             { time: "18:45", activity: "🧺 Transferir roupas", duration: 30 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação", duration: 30 }
+            { time: "19:00", activity: "🍽️ Jantar", duration: 60 },
+            { time: "20:00", activity: "📖 Leitura", duration: 30 },
+            { time: "20:30", activity: "🎮 Lazer", duration: 60 },
+            { time: "21:30", activity: "🧹 Arrumação", duration: 30 }
         ],
         sexta: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
+            { time: "08:00", activity: "🌅 Acordar, banho e escovar os dentes", duration: 30 },
+            { time: "08:30", activity: "🧘 Ioga e meditação", duration: 60 },
+            { time: "09:30", activity: "🥞 Café da manhã", duration: 30 },
+            { time: "10:15", activity: "💼 Busca por emprego", duration: 120 },
+            { time: "12:15", activity: "🍲 Almoço", duration: 60 },
+            { time: "14:00", activity: "🐱 Limpeza da caixa de areia", duration: 30 },
             { time: "15:00", activity: "🛏️ Organização do quarto", duration: 45 },
             { time: "16:00", activity: "🌿 Limpeza da varanda", duration: 45 },
-            { time: "16:45", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação", duration: 30 }
+            { time: "16:45", activity: "🏋️ Exercício físico", duration: 60 },
+            { time: "17:00", activity: "📚 Estudos", duration: 90 },
+            { time: "19:00", activity: "🍽️ Jantar", duration: 60 },
+            { time: "20:00", activity: "📖 Leitura", duration: 30 },
+            { time: "20:30", activity: "🎮 Lazer", duration: 60 },
+            { time: "21:30", activity: "🧹 Arrumação", duration: 30 }
         ],
         sabado: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
+            { time: "08:00", activity: "🌅 Acordar, banho e escovar os dentes", duration: 30 },
+            { time: "08:30", activity: "🧘 Ioga e meditação", duration: 60 },
+            { time: "09:30", activity: "🥞 Café da manhã", duration: 30 },
+            { time: "10:15", activity: "💼 Busca por emprego", duration: 120 },
+            { time: "12:15", activity: "🍲 Almoço", duration: 60 },
             { time: "13:00", activity: "🚿 Faxina do banheiro", duration: 90 },
             { time: "14:30", activity: "🐱 Limpeza quartinho dos gatos", duration: 45 },
             { time: "15:15", activity: "🧺 Lavar roupa de cama", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação", duration: 30 }
+            { time: "16:00", activity: "🏋️ Exercício físico", duration: 60 },
+            { time: "17:00", activity: "📚 Estudos", duration: 90 },
+            { time: "19:00", activity: "🍽️ Jantar", duration: 60 },
+            { time: "20:00", activity: "📖 Leitura", duration: 30 },
+            { time: "20:30", activity: "🎮 Lazer", duration: 60 },
+            { time: "21:30", activity: "🧹 Arrumação", duration: 30 }
         ],
         domingo: [
             { time: "09:00", activity: "🍳 Preparo das refeições da semana", duration: 120 },
-            { time: "12:00", activity: "Congelamento das refeições", duration: 60 },
-            { time: "14:00", activity: "Resto do dia livre", duration: 0 }
+            { time: "12:00", activity: "🧊 Congelamento das refeições", duration: 60 },
+            { time: "14:00", activity: "😌 Resto do dia livre", duration: 0 }
         ]
     };
 
@@ -1098,11 +2282,11 @@
     function saveContent() {
         if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const modal = document.getElementById('noteModal');
-        const textarea = document.getElementById('noteText');
+        const activityInput = document.getElementById('editActivityName');
         const durationInput = document.getElementById('editDuration');
         const day = modal.dataset.day;
         const time = modal.dataset.time;
-        const newActivity = textarea.value.trim();
+        const newActivity = activityInput.value.trim();
         const newDuration = parseInt(durationInput.value) || 60;
         
         if (!newActivity) { alert('A atividade não pode ficar vazia.'); return; }
@@ -1147,7 +2331,7 @@
     function openEditModal(day, time, activity, duration, event) {
         event.stopPropagation();
         const modal = document.getElementById('noteModal');
-        document.getElementById('noteText').value = activity;
+        document.getElementById('editActivityName').value = activity;
         document.getElementById('editDuration').value = duration || 60;
         document.getElementById('modalActivityTitle').textContent = 'Editar Atividade';
         document.getElementById('modalActivityTime').textContent = time;
@@ -1155,7 +2339,7 @@
         modal.dataset.day = day;
         modal.dataset.time = time;
         modal.classList.add('show');
-        document.getElementById('noteText').focus();
+        document.getElementById('editActivityName').focus();
     }
     
     function openAddModal() {
@@ -1164,6 +2348,7 @@
         document.getElementById('newActivityDuration').value = 60;
         document.querySelectorAll('input[name="newDay"]').forEach(cb => cb.checked = false);
         document.getElementById('addModal').classList.add('show');
+        setTimeout(() => document.getElementById('newActivityName').focus(), 100);
     }
     function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
     function closeModal() { document.getElementById('noteModal').classList.remove('show'); }
@@ -1464,7 +2649,11 @@
         if (e.target === document.getElementById('addModal')) closeAddModal();
     });
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') { closeModal(); closeAddModal(); }
+        if (e.key === 'Escape') { 
+            closeModal(); 
+            closeAddModal();
+            closeEmojiPicker();
+        }
     });
 </script>
 </body>
