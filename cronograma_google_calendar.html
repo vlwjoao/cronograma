@@ -48,6 +48,7 @@
             padding: 15px;
             background: rgba(0,0,0,0.1);
             border-radius: 8px;
+            align-items: center;
         }
         .auth-btn {
             padding: 10px 20px;
@@ -68,6 +69,25 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+        .add-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #10b981;
+            color: white;
+            font-size: 22px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .add-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            background: #059669;
         }
         .sync-status {
             display: inline-block;
@@ -286,6 +306,42 @@
         .modal-body {
             margin-bottom: 20px;
         }
+        .modal-body label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        .modal-body input[type="text"],
+        .modal-body input[type="time"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .modal-body input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .days-checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .day-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #444;
+            cursor: pointer;
+        }
         #noteLabel {
             display: block;
             font-weight: 600;
@@ -312,6 +368,7 @@
             display: flex;
             gap: 10px;
             justify-content: flex-end;
+            margin-top: 20px;
         }
         .modal-btn {
             padding: 10px 20px;
@@ -335,13 +392,6 @@
         }
         .modal-btn.cancel:hover {
             background: #e0e0e0;
-        }
-        .modal-btn.delete {
-            background: #ef4444;
-            color: white;
-        }
-        .modal-btn.delete:hover {
-            background: #dc2626;
         }
         .color-legend {
             background: #f9f9f9;
@@ -396,6 +446,7 @@
                 <button class="auth-btn" id="connectBtn" onclick="handleConnectClick()">🔗 Conectar Google</button>
                 <button class="auth-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
                 <button class="auth-btn" id="desyncBtn" onclick="desyncNow()" disabled style="background: #ef4444; color: white;">🗑️ Dessincronizar</button>
+                <button class="add-btn" onclick="openAddModal()" title="Adicionar Nova Atividade">+</button>
                 <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
             </div>
             <div class="user-info" id="userInfo"></div>
@@ -590,8 +641,39 @@
         </div>
     </div>
 
+    <!-- MODAL ADICIONAR NOVA ATIVIDADE -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nova Atividade</h2>
+                <p>Insira os dados da nova tarefa</p>
+            </div>
+            <div class="modal-body">
+                <label>Nome da Atividade:</label>
+                <input type="text" id="newActivityName" placeholder="Ex: Reunião importante">
+                
+                <label>Horário (HH:MM):</label>
+                <input type="time" id="newActivityTime">
+                
+                <label>Dias da Semana:</label>
+                <div class="days-checkbox-group">
+                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="segunda"> Segunda</label>
+                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="terca"> Terça</label>
+                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quarta"> Quarta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quinta"> Quinta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sexta"> Sexta</label>
+                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sabado"> Sábado</label>
+                    <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="domingo"> Domingo</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closeAddModal()">Cancelar</button>
+                <button class="modal-btn save" onclick="saveNewActivity()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ============ CONFIGURAÇÃO ============
         const CLIENT_ID = '405103894296-n00m60mb021u4os48kcnl4lmhmjkm6oe.apps.googleusercontent.com';
         const CALENDAR_ID = 'primary';
         const SCOPES = 'https://www.googleapis.com/auth/calendar';
@@ -600,9 +682,6 @@
         let isAuthenticated = false;
         let tokenClient;
 
-        // ============ RENDERIZAÇÃO SEGURA DAS LINHAS (fix XSS) ============
-        // Constrói cada célula de atividade via DOM em vez de innerHTML,
-        // evitando que texto digitado pelo usuário seja interpretado como HTML.
         function renderActivityCell(cell) {
             const day = cell.closest('table').id.replace('-table', '');
             const time = cell.closest('tr').querySelector('.time').dataset.time;
@@ -616,7 +695,7 @@
 
             const textSpan = document.createElement('span');
             textSpan.className = 'activity-text';
-            textSpan.textContent = activity; // textContent = seguro contra XSS
+            textSpan.textContent = activity;
             cell.appendChild(textSpan);
 
             const editBtn = document.createElement('button');
@@ -645,7 +724,6 @@
             });
         }
 
-        // ============ INICIALIZAÇÃO ============
         function handleConnectClick() {
             if (isAuthenticated) {
                 isAuthenticated = false;
@@ -679,10 +757,6 @@
                     error_callback: handleAuthError,
                 });
 
-                console.log('Token client inicializado com sucesso');
-
-                // Só considera "autenticado" se o token ainda não expirou (fix: sem refresh automático,
-                // então detectamos expiração local antes de tentar usar um token morto).
                 const storedToken = localStorage.getItem('googleToken');
                 const expiry = parseInt(localStorage.getItem('googleTokenExpiry') || '0', 10);
                 if (storedToken && Date.now() < expiry) {
@@ -708,7 +782,6 @@
                 localStorage.setItem('googleToken', response.access_token);
                 const expiresInMs = (response.expires_in ? parseInt(response.expires_in, 10) : 3600) * 1000;
                 localStorage.setItem('googleTokenExpiry', String(Date.now() + expiresInMs - 30000));
-                console.log('Token obtido e armazenado com sucesso');
                 updateAuthUI();
             }
         }
@@ -741,7 +814,6 @@
             document.getElementById('monthInfo').textContent = `📆 Sincronizando para: ${monthName}`;
         }
 
-        // ============ TOKEN VÁLIDO / RE-AUTH AUTOMÁTICA (fix) ============
         function getValidToken() {
             const token = localStorage.getItem('googleToken');
             const expiry = parseInt(localStorage.getItem('googleTokenExpiry') || '0', 10);
@@ -757,20 +829,19 @@
             localStorage.removeItem('googleTokenExpiry');
             updateAuthUI();
             updateSyncStatus('error', '⚠️ Sessão expirada, reconecte');
-            console.warn('Reautenticação necessária:', reason);
             if (tokenClient) {
                 tokenClient.requestAccessToken({ prompt: '' });
             }
         }
 
-        // ============ FUNÇÕES DE ID VÁLIDO ============
-        function generateValidEventId(day, time) {
-            const dayIndex = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'].indexOf(day);
+        function generateValidEventId(date, time) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
             const [hour, minute] = time.split(':');
-            return `cron${dayIndex}${hour}${minute}`;
+            return `c${year}${month}${day}t${hour}${minute}`;
         }
 
-        // ============ SINCRONIZAÇÃO ============
         async function syncWithGoogleCalendar() {
             const token = getValidToken();
             if (!token) {
@@ -779,13 +850,9 @@
             }
 
             updateSyncStatus('syncing', '🔄 Sincronizando mês...');
-            console.log('=== INICIANDO SINCRONIZAÇÃO DO MÊS ===');
 
             try {
-                console.log('Token recuperado com sucesso');
                 const activities = getAllActivitiesFromSchedule();
-                console.log(`Total de atividades para padrão: ${activities.length}`);
-
                 const today = new Date();
                 const currentYear = today.getFullYear();
                 const currentMonth = today.getMonth();
@@ -794,9 +861,6 @@
                 const lastDay = new Date(currentYear, currentMonth + 1, 0);
                 const daysInMonth = lastDay.getDate();
 
-                console.log(`Sincronizando mês: ${firstDay.toLocaleDateString('pt-BR')} até ${lastDay.toLocaleDateString('pt-BR')}`);
-                console.log(`Total de dias no mês: ${daysInMonth}`);
-
                 let successCount = 0;
                 let errorCount = 0;
                 let authFailed = false;
@@ -804,7 +868,6 @@
                 for (let dayOfMonth = 1; dayOfMonth <= daysInMonth && !authFailed; dayOfMonth++) {
                     const date = new Date(currentYear, currentMonth, dayOfMonth);
                     const dayOfWeek = date.getDay();
-
                     const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
                     const dayName = dayNames[dayOfWeek];
 
@@ -812,9 +875,7 @@
 
                     for (let activity of dayActivities) {
                         const event = createCalendarEvent(activity, date);
-                        const eventId = generateValidEventId(dayName, activity.time);
-
-                        console.log(`Processando: ${activity.activity} (${activity.time}) em ${date.toLocaleDateString('pt-BR')} - ID: ${eventId}`);
+                        const eventId = generateValidEventId(date, activity.time);
 
                         try {
                             const updateResponse = await fetch(
@@ -834,10 +895,7 @@
                                 break;
                             }
 
-                            console.log(`Resposta UPDATE: ${updateResponse.status}`);
-
                             if (updateResponse.status === 404) {
-                                console.log(`Evento não existe, criando novo...`);
                                 event.id = eventId;
                                 const insertResponse = await fetch(
                                     'https://www.googleapis.com/calendar/v3/calendars/primary/events',
@@ -856,26 +914,17 @@
                                     break;
                                 }
 
-                                console.log(`Resposta INSERT: ${insertResponse.status}`);
-
                                 if (insertResponse.ok) {
                                     successCount++;
-                                    console.log(`✅ Evento criado: ${activity.activity}`);
                                 } else {
-                                    const errorText = await insertResponse.text();
-                                    console.error(`❌ Erro ao criar evento:`, errorText);
                                     errorCount++;
                                 }
                             } else if (updateResponse.ok) {
                                 successCount++;
-                                console.log(`✅ Evento atualizado: ${activity.activity}`);
                             } else {
-                                const errorText = await updateResponse.text();
-                                console.error(`❌ Erro ao atualizar evento:`, errorText);
                                 errorCount++;
                             }
                         } catch (err) {
-                            console.error(`❌ Erro ao processar atividade ${activity.activity}:`, err);
                             errorCount++;
                         }
                     }
@@ -886,9 +935,6 @@
                     return;
                 }
 
-                console.log(`=== SINCRONIZAÇÃO CONCLUÍDA ===`);
-                console.log(`✅ Sucesso: ${successCount} | ❌ Erros: ${errorCount}`);
-
                 if (errorCount === 0) {
                     updateSyncStatus('synced', '✅ Sincronizado com sucesso!');
                 } else {
@@ -896,7 +942,6 @@
                 }
                 setTimeout(() => updateSyncStatus('synced', '✅ Pronto para sincronizar'), 3000);
             } catch (error) {
-                console.error('Erro fatal na sincronização:', error);
                 updateSyncStatus('error', '❌ Erro: ' + error.message);
             }
         }
@@ -909,26 +954,20 @@
             }
         }
 
-        // ============ DESSINCRONIZAÇÃO ============
         async function desyncNow() {
             const token = getValidToken();
             if (!token) {
-                forceReauth('token ausente ou expirado ao iniciar dessync');
+                forceReauth('token ausente ou expirado');
                 return;
             }
 
-            const confirmDelete = confirm('⚠️ Tem certeza?\n\nIsso vai DELETAR todos os eventos sincronizados de ' + getMonthName() + ' do Google Calendar.\n\nOs dados no site serão mantidos. Você pode sincronizar novamente depois.');
-
-            if (!confirmDelete) {
+            if (!confirm('⚠️ Deseja deletar todos os eventos sincronizados de ' + getMonthName() + ' do Google Calendar?')) {
                 return;
             }
 
             updateSyncStatus('syncing', '🔄 Dessincronizando...');
-            console.log('=== INICIANDO DESSINCRONIZAÇÃO ===');
-
             try {
                 const activities = getAllActivitiesFromSchedule();
-
                 const today = new Date();
                 const currentYear = today.getFullYear();
                 const currentMonth = today.getMonth();
@@ -936,69 +975,46 @@
                 const daysInMonth = lastDay.getDate();
 
                 let deletedCount = 0;
-                let errorCount = 0;
                 let authFailed = false;
 
                 for (let dayOfMonth = 1; dayOfMonth <= daysInMonth && !authFailed; dayOfMonth++) {
                     const date = new Date(currentYear, currentMonth, dayOfMonth);
                     const dayOfWeek = date.getDay();
-
                     const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
                     const dayName = dayNames[dayOfWeek];
 
                     const dayActivities = activities.filter(a => a.day === dayName);
 
                     for (let activity of dayActivities) {
-                        const eventId = generateValidEventId(dayName, activity.time);
-
-                        console.log(`Deletando: ${activity.activity} (${activity.time}) - ID: ${eventId}`);
-
+                        const eventId = generateValidEventId(date, activity.time);
                         try {
                             const deleteResponse = await fetch(
                                 `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
                                 {
                                     method: 'DELETE',
-                                    headers: {
-                                        'Authorization': `Bearer ${token}`
-                                    }
+                                    headers: { 'Authorization': `Bearer ${token}` }
                                 }
                             );
-
                             if (deleteResponse.status === 401) {
                                 authFailed = true;
                                 break;
                             }
-
-                            console.log(`Resposta DELETE: ${deleteResponse.status}`);
-
                             if (deleteResponse.ok || deleteResponse.status === 404) {
                                 deletedCount++;
-                                console.log(`✅ Evento deletado: ${activity.activity}`);
-                            } else {
-                                const errorText = await deleteResponse.text();
-                                console.error(`❌ Erro ao deletar evento:`, errorText);
-                                errorCount++;
                             }
-                        } catch (err) {
-                            console.error(`❌ Erro ao processar delete de ${activity.activity}:`, err);
-                            errorCount++;
-                        }
+                        } catch (err) {}
                     }
                 }
 
                 if (authFailed) {
-                    forceReauth('401 recebido durante dessync');
+                    forceReauth('401');
                     return;
                 }
 
-                console.log(`=== DESSINCRONIZAÇÃO CONCLUÍDA ===`);
-                console.log(`✅ Deletados: ${deletedCount} | ❌ Erros: ${errorCount}`);
-
-                updateSyncStatus('synced', `✅ ${deletedCount} eventos removidos do Google Calendar`);
-                alert(`✅ Dessincronização concluída!\n\n${deletedCount} eventos foram removidos do Google Calendar de ${getMonthName()}.\n\nOs dados no site foram preservados.`);
+                updateSyncStatus('synced', `✅ ${deletedCount} eventos removidos`);
+                alert(`✅ Dessincronização concluída!\n\n${deletedCount} eventos foram removidos do Google Calendar.`);
                 setTimeout(() => updateSyncStatus('synced', '✅ Pronto para sincronizar'), 3000);
             } catch (error) {
-                console.error('Erro fatal na dessincronização:', error);
                 updateSyncStatus('error', '❌ Erro: ' + error.message);
             }
         }
@@ -1014,11 +1030,11 @@
 
             days.forEach(day => {
                 const table = document.getElementById(`${day}-table`);
+                if (!table) return;
                 const rows = table.querySelectorAll('tr');
 
                 rows.forEach((row, index) => {
                     if (index === 0) return;
-
                     const timeCell = row.querySelector('.time');
                     const activityCell = row.querySelector('.activity-cell');
 
@@ -1037,14 +1053,11 @@
 
         function createCalendarEvent(activity, date) {
             const [hour, minute] = activity.time.split(':');
-
             const startDate = new Date(date);
             startDate.setHours(parseInt(hour), parseInt(minute), 0, 0);
 
             const endDate = new Date(date);
             endDate.setHours(parseInt(hour) + 1, parseInt(minute), 0, 0);
-
-            console.log(`Criando evento: ${activity.activity} em ${startDate.toISOString()}`);
 
             return {
                 'summary': activity.activity,
@@ -1060,13 +1073,9 @@
             };
         }
 
-        // ============ CRONOGRAMA ============
         function switchTab(day, event) {
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(content => content.classList.remove('active'));
-
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
             document.getElementById(day).classList.add('active');
             if(event) event.target.classList.add('active');
@@ -1084,7 +1093,6 @@
             timeDisplay.textContent = time;
             label.textContent = '✏️ Edite a atividade:';
             textarea.value = activity;
-            textarea.placeholder = 'Edite o texto da atividade...';
 
             modal.dataset.mode = 'edit';
             modal.dataset.day = day;
@@ -1093,56 +1101,117 @@
             textarea.focus();
         }
 
+        function openAddModal() {
+            document.getElementById('newActivityName').value = '';
+            document.getElementById('newActivityTime').value = '';
+            document.querySelectorAll('input[name="newDay"]').forEach(cb => cb.checked = false);
+            document.getElementById('addModal').classList.add('show');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('show');
+        }
+
+        function saveNewActivity() {
+            const name = document.getElementById('newActivityName').value.trim();
+            const time = document.getElementById('newActivityTime').value;
+            const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
+
+            if (!name) {
+                alert('Por favor, informe o nome da atividade.');
+                return;
+            }
+            if (!time || !TIME_REGEX.test(time)) {
+                alert('Por favor, informe um horário válido no formato HH:MM.');
+                return;
+            }
+            if (selectedDays.length === 0) {
+                alert('Por favor, selecione pelo menos um dia da semana.');
+                return;
+            }
+
+            selectedDays.forEach(day => {
+                const table = document.getElementById(`${day}-table`);
+                if (!table) return;
+
+                let rows = Array.from(table.querySelectorAll('tr')).slice(1);
+                let existingRow = rows.find(r => r.querySelector('.time').dataset.time === time);
+
+                if (existingRow) {
+                    let activityCell = existingRow.querySelector('.activity-cell');
+                    activityCell.dataset.activity += `, ${name}`;
+                    renderActivityCell(activityCell);
+                } else {
+                    let newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td class="time" data-time="${time}">${time}</td>
+                        <td class="activity-cell" data-activity="${name}"></td>
+                    `;
+                    table.appendChild(newRow);
+                    sortTableByTime(table);
+                    
+                    newRow.querySelector('.time').addEventListener('click', () => {
+                        editTime(day, newRow.querySelector('.time'), time);
+                    });
+                    renderActivityCell(newRow.querySelector('.activity-cell'));
+                }
+            });
+
+            closeAddModal();
+            updateSyncStatus('pending', '⏳ Alterações pendentes de sincronização');
+        }
+
+        function sortTableByTime(table) {
+            let rows = Array.from(table.rows).slice(1);
+            rows.sort((a, b) => {
+                let timeA = a.querySelector('.time').dataset.time;
+                let timeB = b.querySelector('.time').dataset.time;
+                return timeA.localeCompare(timeB);
+            });
+            rows.forEach(row => table.appendChild(row));
+        }
+
         function deleteActivity(day, cellElement, event) {
             event.stopPropagation();
             if (confirm('Tem certeza que deseja deletar esta atividade?')) {
                 const row = cellElement.closest('tr');
                 row.remove();
-                console.log(`Atividade deletada de ${day}`);
+                updateSyncStatus('pending', '⏳ Alterações pendentes');
             }
         }
 
         function closeModal() {
-            const modal = document.getElementById('noteModal');
-            modal.classList.remove('show');
+            document.getElementById('noteModal').classList.remove('show');
         }
 
-        // Fix XSS: reescreve a célula via renderActivityCell (DOM/textContent),
-        // nunca mais via innerHTML com string concatenada.
         function saveContent() {
             const modal = document.getElementById('noteModal');
             const textarea = document.getElementById('noteText');
-            const mode = modal.dataset.mode;
+            const day = modal.dataset.day;
+            const time = modal.dataset.time;
+            const newActivity = textarea.value.trim();
 
-            if (mode === 'edit') {
-                const day = modal.dataset.day;
-                const time = modal.dataset.time;
-                const newActivity = textarea.value.trim();
-
-                if (!newActivity) {
-                    alert('A atividade não pode ficar vazia.');
-                    return;
-                }
-
-                const table = document.getElementById(`${day}-table`);
-                const rows = table.querySelectorAll('tr');
-                for (let row of rows) {
-                    const timeCell = row.querySelector('.time');
-                    const activityCell = row.querySelector('.activity-cell');
-
-                    if (timeCell && timeCell.dataset.time === time && activityCell) {
-                        activityCell.dataset.activity = newActivity;
-                        renderActivityCell(activityCell);
-                        console.log(`Atividade atualizada em ${day} ${time} → ${newActivity}`);
-                        break;
-                    }
-                }
+            if (!newActivity) {
+                alert('A atividade não pode ficar vazia.');
+                return;
             }
 
+            const table = document.getElementById(`${day}-table`);
+            const rows = table.querySelectorAll('tr');
+            for (let row of rows) {
+                const timeCell = row.querySelector('.time');
+                const activityCell = row.querySelector('.activity-cell');
+
+                if (timeCell && timeCell.dataset.time === time && activityCell) {
+                    activityCell.dataset.activity = newActivity;
+                    renderActivityCell(activityCell);
+                    break;
+                }
+            }
             closeModal();
+            updateSyncStatus('pending', '⏳ Alterações pendentes');
         }
 
-        // Fix: valida formato HH:MM antes de aceitar, e verifica conflito de horário no mesmo dia.
         function editTime(day, element, currentTime) {
             const newTime = prompt('Editar horário (formato HH:MM):', currentTime);
             if (!newTime || newTime === currentTime) return;
@@ -1163,19 +1232,21 @@
 
             element.dataset.time = newTime;
             element.textContent = newTime;
-            console.log(`Horário atualizado: ${currentTime} → ${newTime}`);
+            sortTableByTime(table);
+            updateSyncStatus('pending', '⏳ Alterações pendentes');
         }
 
         window.addEventListener('click', function(e) {
             const modal = document.getElementById('noteModal');
-            if (e.target === modal) {
-                closeModal();
-            }
+            const addModal = document.getElementById('addModal');
+            if (e.target === modal) closeModal();
+            if (e.target === addModal) closeAddModal();
         });
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeModal();
+                closeAddModal();
             }
         });
     </script>
