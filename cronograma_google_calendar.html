@@ -6,6 +6,7 @@
     <title>Cronograma Semanal + Google Calendar</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
+        /* ===== RESET E BASE ===== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; min-height: 100vh; }
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
@@ -27,26 +28,52 @@
         .sync-status.disconnected { background: #6b7280; color: white; }
         .user-info { text-align: center; padding: 10px; color: white; font-size: 14px; }
         .month-info { text-align: center; padding: 10px; color: rgba(255,255,255,0.9); font-size: 13px; font-style: italic; }
-        
-        /* BARRA DE PROGRESSO */
+
+        /* ===== BARRA DE PROGRESSO COM GIF ===== */
         .progress-container {
             display: none;
             margin: 15px auto 10px auto;
             padding: 12px 20px;
             background: rgba(255,255,255,0.15);
             border-radius: 8px;
-            max-width: 500px;
+            max-width: 600px;
             text-align: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         .progress-container.active {
-            display: block;
+            display: flex;
             animation: fadeIn 0.3s;
+        }
+        .progress-gif {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .progress-gif img,
+        .progress-gif video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .progress-content {
+            flex: 1;
+            min-width: 200px;
         }
         .progress-message {
             font-size: 14px;
             font-weight: 500;
             color: white;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .progress-bar-bg {
             width: 100%;
@@ -181,13 +208,19 @@
         <div class="user-info" id="userInfo"></div>
         <div class="month-info" id="monthInfo"></div>
 
-        <!-- BARRA DE PROGRESSO -->
+        <!-- ===== BARRA DE PROGRESSO COM GIF ===== -->
         <div class="progress-container" id="progressContainer">
-            <div class="progress-message" id="progressMessage">⏳ Sincronização em andamento. Aguarde...</div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" id="progressFill"></div>
+            <!-- GIF do pato (substitua o src pelo seu arquivo) -->
+            <div class="progress-gif">
+                <img id="progressGif" src="pato.gif" alt="Pato andando" onerror="this.style.display='none'">
             </div>
-            <div class="progress-percent" id="progressPercent">0%</div>
+            <div class="progress-content">
+                <div class="progress-message" id="progressMessage">⏳ Sincronização em andamento. Aguarde...</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-percent" id="progressPercent">0%</div>
+            </div>
         </div>
     </div>
 
@@ -213,7 +246,7 @@
             <button class="tab-btn" onclick="switchTab('domingo', event)">Dom</button>
         </div>
 
-        <!-- TABELAS VAZIAS -->
+        <!-- TABELAS VAZIAS (apenas cabeçalho) -->
         <div id="segunda" class="tab-content active">
             <table id="segunda-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
             <div class="important-box" id="important-box-segunda">
@@ -335,7 +368,7 @@
 
     let isAuthenticated = false;
     let tokenClient;
-    let isSyncing = false; // Controle de sincronização em andamento
+    let isSyncing = false;
 
     // ===================================================================
     // MODELO DE ROTINA (DEFAULT)
@@ -445,7 +478,7 @@
     };
 
     // ===================================================================
-    // BARRA DE PROGRESSO
+    // BARRA DE PROGRESSO COM GIF
     // ===================================================================
     function showProgress(message) {
         const container = document.getElementById('progressContainer');
