@@ -857,69 +857,134 @@
     let isAuthenticated = false;
     let tokenClient;
     let isSyncing = false;
-    let globalSyncStatus = 'disconnected';
+    let globalSyncStatus = 'disconnected'; // 'synced' | 'pending' | 'disconnected' | 'error' | 'syncing'
 
     // ===================================================================
-    // CONTROLE DE STATUS GLOBAL
+    // CONTROLE DE STATUS INDIVIDUAL E GLOBAL
     // ===================================================================
-    function setGlobalSyncStatus(status) {
-        globalSyncStatus = status;
-        localStorage.setItem(SYNC_STATUS_KEY, status);
-        updateSyncStatusUI(status);
-        updateAllActivityIndicators();
+    function getActivityCell(day, time) {
+        const table = document.getElementById(day + '-table');
+        if (!table) return null;
+        const rows = table.querySelectorAll('tr');
+        for (let row of rows) {
+            const timeCell = row.querySelector('.time');
+            if (timeCell && timeCell.dataset.time === time) {
+                return row.querySelector('.activity-cell');
+            }
+        }
+        return null;
     }
 
-    function loadGlobalSyncStatus() {
-        const saved = localStorage.getItem(SYNC_STATUS_KEY);
-        if (saved) {
-            globalSyncStatus = saved;
-            updateSyncStatusUI(saved);
-            updateAllActivityIndicators();
+    function setActivityStatus(day, time, status) {
+        const cell = getActivityCell(day, time);
+        if (!cell) return;
+        cell.dataset.syncStatus = status;
+        const indicator = cell.querySelector('.sync-indicator');
+        if (indicator) {
+            indicator.className = 'sync-indicator ' + status;
+        }
+        updateGlobalStatus();
+    }
+
+    function markActivityAsPending(day, time) {
+        setActivityStatus(day, time, 'pending');
+    }
+
+    function markActivityAsSynced(day, time) {
+        setActivityStatus(day, time, 'synced');
+    }
+
+    function markAllActivitiesAsPending() {
+        document.querySelectorAll('.activity-cell').forEach(cell => {
+            cell.dataset.syncStatus = 'pending';
+            const indicator = cell.querySelector('.sync-indicator');
+            if (indicator) {
+                indicator.className = 'sync-indicator pending';
+            }
+        });
+        updateGlobalStatus();
+    }
+
+    function markAllActivitiesAsSynced() {
+        document.querySelectorAll('.activity-cell').forEach(cell => {
+            cell.dataset.syncStatus = 'synced';
+            const indicator = cell.querySelector('.sync-indicator');
+            if (indicator) {
+                indicator.className = 'sync-indicator synced';
+            }
+        });
+        updateGlobalStatus();
+    }
+
+    function getPendingActivities() {
+        const pendings = [];
+        document.querySelectorAll('.activity-cell').forEach(cell => {
+            if (cell.dataset.syncStatus === 'pending') {
+                const row = cell.closest('tr');
+                const timeCell = row.querySelector('.time');
+                const day = cell.closest('table').id.replace('-table', '');
+                if (timeCell) {
+                    pendings.push({
+                        day: day,
+                        time: timeCell.dataset.time,
+                        activity: cell.dataset.activity,
+                        duration: parseInt(cell.dataset.duration) || 60,
+                        cell: cell
+                    });
+                }
+            }
+        });
+        return pendings;
+    }
+
+    function updateGlobalStatus() {
+        const pendings = getPendingActivities();
+        const totalActivities = document.querySelectorAll('.activity-cell').length;
+        const el = document.getElementById('syncStatus');
+        if (totalActivities === 0) {
+            // Nenhuma atividade cadastrada
+            setGlobalSyncStatus('disconnected', '📭 Nenhuma atividade');
+            return;
+        }
+        if (pendings.length === 0) {
+            setGlobalSyncStatus('synced', '✅ Tudo sincronizado');
         } else {
-            setGlobalSyncStatus('disconnected');
+            setGlobalSyncStatus('pending', `⏳ ${pendings.length} pendente${pendings.length > 1 ? 's' : ''}`);
         }
     }
 
-    function updateSyncStatusUI(status) {
+    function setGlobalSyncStatus(status, text) {
+        globalSyncStatus = status;
         const el = document.getElementById('syncStatus');
         const texts = {
-            'synced': '✅ Sincronizado',
+            'synced': '✅ Tudo sincronizado',
             'pending': '⏳ Pendente',
             'disconnected': '🔴 Desconectado',
             'error': '❌ Erro',
             'syncing': '🔄 Sincronizando...'
         };
         el.className = 'sync-status ' + status;
-        el.textContent = texts[status] || '🔴 Desconectado';
+        el.textContent = text || texts[status] || '🔴 Desconectado';
+        // Atualiza também as bolinhas individuais para refletir o status global (fallback)
+        // Mas já mantemos individual via data-sync-status
     }
 
-    function updateAllActivityIndicators() {
-        document.querySelectorAll('.sync-indicator').forEach(indicator => {
-            indicator.className = 'sync-indicator';
-            if (globalSyncStatus === 'synced') {
-                indicator.classList.add('synced');
-            } else if (globalSyncStatus === 'pending' || globalSyncStatus === 'syncing') {
-                indicator.classList.add('pending');
-            } else {
-                indicator.classList.add('error');
-            }
-        });
-    }
-
-    function markAsPending() {
-        if (isAuthenticated && globalSyncStatus !== 'pending') {
-            setGlobalSyncStatus('pending');
+    function loadGlobalStatusFromStorage() {
+        const saved = localStorage.getItem(SYNC_STATUS_KEY);
+        if (saved) {
+            globalSyncStatus = saved;
+        } else {
+            globalSyncStatus = 'disconnected';
         }
+        updateGlobalStatus();
     }
 
-    function markAsSynced() {
-        if (isAuthenticated) {
-            setGlobalSyncStatus('synced');
-        }
+    function saveGlobalStatusToStorage() {
+        localStorage.setItem(SYNC_STATUS_KEY, globalSyncStatus);
     }
 
     // ===================================================================
-    // EMOJI PICKER
+    // EMOJI PICKER (mesmo código anterior, omitido para brevidade)
     // ===================================================================
     const EMOJIS = {
         '😀': 'Smileys', '😁': 'Smileys', '😂': 'Smileys', '🤣': 'Smileys',
@@ -1163,7 +1228,7 @@
     });
 
     // ===================================================================
-    // MODELO DE ROTINA
+    // MODELO DE ROTINA (mesmo de antes)
     // ===================================================================
     const DEFAULT_ROUTINE = {
         segunda: [
@@ -1275,7 +1340,7 @@
     function showProgress(message) {
         document.getElementById('progressContainer').classList.add('active');
         document.getElementById('progressMessage').textContent = message || '⏳ Sincronizando...';
-        setGlobalSyncStatus('syncing');
+        setGlobalSyncStatus('syncing', '🔄 Sincronizando...');
     }
     function updateProgress(current, total) {
         const pct = Math.min(100, Math.round((current / total) * 100));
@@ -1351,7 +1416,8 @@
                     activities.push({ 
                         time: timeCell.dataset.time, 
                         activity: activityCell.dataset.activity,
-                        duration: duration
+                        duration: duration,
+                        syncStatus: activityCell.dataset.syncStatus || 'pending'
                     });
                 }
             });
@@ -1378,6 +1444,7 @@
                 table.appendChild(header);
                 schedule[day].forEach(item => {
                     const duration = item.duration || 60;
+                    const syncStatus = item.syncStatus || 'pending';
                     const row = document.createElement('tr');
                     const timeCell = document.createElement('td');
                     timeCell.className = 'time';
@@ -1388,6 +1455,7 @@
                     activityCell.className = 'activity-cell';
                     activityCell.dataset.activity = item.activity;
                     activityCell.dataset.duration = duration;
+                    activityCell.dataset.syncStatus = syncStatus;
                     row.appendChild(timeCell);
                     row.appendChild(activityCell);
                     table.appendChild(row);
@@ -1395,7 +1463,7 @@
                 });
             });
             if (hasData) updateAllImportantBoxes();
-            updateAllActivityIndicators();
+            updateGlobalStatus();
             return hasData;
         } catch (e) { return false; }
     }
@@ -1412,7 +1480,7 @@
         });
         localStorage.removeItem(STORAGE_KEY);
         updateAllImportantBoxes();
-        markAsPending();
+        updateGlobalStatus();
         alert('✅ Todas as atividades foram removidas.');
     }
 
@@ -1438,6 +1506,7 @@
                 activityCell.className = 'activity-cell';
                 activityCell.dataset.activity = item.activity;
                 activityCell.dataset.duration = duration;
+                activityCell.dataset.syncStatus = 'pending'; // modelo novo sempre pendente
                 row.appendChild(timeCell);
                 row.appendChild(activityCell);
                 table.appendChild(row);
@@ -1446,31 +1515,24 @@
         });
         saveScheduleToStorage();
         updateAllImportantBoxes();
-        markAsPending();
+        updateGlobalStatus();
         alert('✅ Rotina modelo carregada!');
     }
 
     // ===================================================================
-    // RENDERIZAÇÃO (COM BOLINHA RESTAURADA)
+    // RENDERIZAÇÃO (COM BOLINHA)
     // ===================================================================
     function renderActivityCell(cell) {
         const day = cell.closest('table').id.replace('-table','');
         const time = cell.closest('tr').querySelector('.time').dataset.time;
         const activity = cell.dataset.activity;
         const duration = parseInt(cell.dataset.duration) || 60;
+        const syncStatus = cell.dataset.syncStatus || 'pending';
 
         cell.innerHTML = '';
         
-        // ===== BOLINHA DE STATUS =====
         const indicator = document.createElement('span');
-        indicator.className = 'sync-indicator';
-        if (globalSyncStatus === 'synced') {
-            indicator.classList.add('synced');
-        } else if (globalSyncStatus === 'pending' || globalSyncStatus === 'syncing') {
-            indicator.classList.add('pending');
-        } else {
-            indicator.classList.add('error');
-        }
+        indicator.className = 'sync-indicator ' + syncStatus;
         cell.appendChild(indicator);
         
         const textSpan = document.createElement('span');
@@ -1538,6 +1600,7 @@
             if (existingRow) {
                 let activityCell = existingRow.querySelector('.activity-cell');
                 activityCell.dataset.activity += `, ${name}`;
+                activityCell.dataset.syncStatus = 'pending';
                 renderActivityCell(activityCell);
             } else {
                 const newRow = document.createElement('tr');
@@ -1550,6 +1613,7 @@
                 activityCell.className = 'activity-cell';
                 activityCell.dataset.activity = name;
                 activityCell.dataset.duration = duration;
+                activityCell.dataset.syncStatus = 'pending';
                 newRow.appendChild(timeCell);
                 newRow.appendChild(activityCell);
                 table.appendChild(newRow);
@@ -1559,7 +1623,7 @@
         });
         closeAddModal();
         saveScheduleToStorage();
-        markAsPending();
+        updateGlobalStatus();
     }
 
     function deleteActivity(day, cellElement, event) {
@@ -1568,7 +1632,7 @@
         if (confirm('Deletar esta atividade?')) {
             cellElement.closest('tr').remove();
             saveScheduleToStorage();
-            markAsPending();
+            updateGlobalStatus();
             updateImportantBox(day);
         }
     }
@@ -1594,13 +1658,14 @@
             if (timeCell && timeCell.dataset.time === time && activityCell) {
                 activityCell.dataset.activity = newActivity;
                 activityCell.dataset.duration = newDuration;
+                activityCell.dataset.syncStatus = 'pending';
                 renderActivityCell(activityCell);
                 break;
             }
         }
         closeModal();
         saveScheduleToStorage();
-        markAsPending();
+        updateGlobalStatus();
     }
 
     function editTime(day, element, currentTime) {
@@ -1613,9 +1678,18 @@
         if (conflict) { alert('Já existe atividade nesse horário.'); return; }
         element.dataset.time = newTime;
         element.textContent = newTime;
+        // Marcar a atividade como pendente (pois o horário mudou)
+        const activityCell = element.closest('tr').querySelector('.activity-cell');
+        if (activityCell) {
+            activityCell.dataset.syncStatus = 'pending';
+            const indicator = activityCell.querySelector('.sync-indicator');
+            if (indicator) {
+                indicator.className = 'sync-indicator pending';
+            }
+        }
         sortTableByTime(table);
         saveScheduleToStorage();
-        markAsPending();
+        updateGlobalStatus();
         updateImportantBox(day);
     }
 
@@ -1659,7 +1733,7 @@
             document.getElementById('syncBtn').disabled = true;
             document.getElementById('desyncBtn').disabled = true;
             document.getElementById('userInfo').textContent = '';
-            setGlobalSyncStatus('disconnected');
+            setGlobalSyncStatus('disconnected', '🔴 Desconectado');
             window.location.reload();
         } else {
             if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -1688,7 +1762,7 @@
 
     function handleAuthError(error) {
         console.error('Erro de autenticação:', error);
-        setGlobalSyncStatus('error');
+        setGlobalSyncStatus('error', '❌ Erro: ' + error.error);
     }
 
     function handleCredentialResponse(response) {
@@ -1707,18 +1781,14 @@
             document.getElementById('syncBtn').disabled = false;
             document.getElementById('desyncBtn').disabled = false;
             document.getElementById('userInfo').textContent = '✅ Conectado com Google';
-            // Se estava desconectado, marca como pendente (pois pode ter alterações)
-            if (globalSyncStatus === 'disconnected') {
-                setGlobalSyncStatus('pending');
-            } else {
-                loadGlobalSyncStatus();
-            }
+            // Verifica se há pendências
+            updateGlobalStatus();
         } else {
             document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
             document.getElementById('syncBtn').disabled = true;
             document.getElementById('desyncBtn').disabled = true;
             document.getElementById('userInfo').textContent = '';
-            setGlobalSyncStatus('disconnected');
+            setGlobalSyncStatus('disconnected', '🔴 Desconectado');
         }
     }
 
@@ -1739,12 +1809,12 @@
         localStorage.removeItem('googleToken');
         localStorage.removeItem('googleTokenExpiry');
         updateAuthUI();
-        setGlobalSyncStatus('error');
+        setGlobalSyncStatus('error', '⚠️ Sessão expirada, reconecte');
         if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
     }
 
     // ===================================================================
-    // SINCRONIZAÇÃO
+    // SINCRONIZAÇÃO (APENAS PENDENTES)
     // ===================================================================
     function generateValidEventId(date, time) {
         const year = date.getFullYear();
@@ -1771,7 +1841,9 @@
                         day, 
                         time: timeCell.dataset.time, 
                         activity: activityCell.dataset.activity,
-                        duration: duration
+                        duration: duration,
+                        syncStatus: activityCell.dataset.syncStatus || 'pending',
+                        cell: activityCell
                     });
                 }
             });
@@ -1798,25 +1870,42 @@
         if (isSyncing) { alert('⚠️ Sincronização em andamento.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
+
+        // Buscar atividades pendentes
+        const pending = getPendingActivities();
+        if (pending.length === 0) {
+            alert('✅ Nenhuma atividade pendente para sincronizar.');
+            return;
+        }
+
         isSyncing = true;
         setButtonsEnabled(false);
-        showProgress('⏳ Sincronizando...');
-        setGlobalSyncStatus('syncing');
+        showProgress(`⏳ Sincronizando ${pending.length} atividade${pending.length > 1 ? 's' : ''}...`);
+        setGlobalSyncStatus('syncing', `🔄 Sincronizando ${pending.length}...`);
+
         try {
-            const activities = getAllActivitiesFromSchedule();
             const today = new Date();
             const year = today.getFullYear();
             const month = today.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const startDay = today.getDate();
             const totalDays = daysInMonth - startDay + 1;
-            let processedDays = 0, successCount = 0, errorCount = 0, authFailed = false;
+            let successCount = 0, errorCount = 0, authFailed = false;
             const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+
+            // Agrupar pendentes por dia para progresso
+            const pendingByDay = {};
+            pending.forEach(p => {
+                if (!pendingByDay[p.day]) pendingByDay[p.day] = [];
+                pendingByDay[p.day].push(p);
+            });
+
+            let processedDays = 0;
             for (let d = startDay; d <= daysInMonth && !authFailed; d++) {
                 const date = new Date(year, month, d);
                 const dayName = dayNames[date.getDay()];
-                const dayActivities = activities.filter(a => a.day === dayName);
-                for (let activity of dayActivities) {
+                const dayPendings = pendingByDay[dayName] || [];
+                for (let activity of dayPendings) {
                     const event = createCalendarEvent(activity, date);
                     const eventId = generateValidEventId(date, activity.time);
                     try {
@@ -1834,9 +1923,18 @@
                                 body: JSON.stringify(event)
                             });
                             if (insertRes.status === 401) { authFailed = true; break; }
-                            if (insertRes.ok) successCount++; else errorCount++;
+                            if (insertRes.ok) {
+                                successCount++;
+                                // Marcar como sincronizado
+                                activity.cell.dataset.syncStatus = 'synced';
+                                const indicator = activity.cell.querySelector('.sync-indicator');
+                                if (indicator) indicator.className = 'sync-indicator synced';
+                            } else errorCount++;
                         } else if (updateRes.ok) {
                             successCount++;
+                            activity.cell.dataset.syncStatus = 'synced';
+                            const indicator = activity.cell.querySelector('.sync-indicator');
+                            if (indicator) indicator.className = 'sync-indicator synced';
                         } else {
                             errorCount++;
                         }
@@ -1845,13 +1943,17 @@
                 processedDays++;
                 updateProgress(processedDays, totalDays);
             }
+
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
-            const startDateStr = today.toLocaleDateString('pt-BR');
-            const endDateStr = new Date(year, month, daysInMonth).toLocaleDateString('pt-BR');
-            setGlobalSyncStatus('synced');
-            setTimeout(() => updateSyncStatusUI('synced'), 3000);
+
+            saveScheduleToStorage();
+            updateGlobalStatus();
+            const msg = `✅ ${successCount} atividade${successCount > 1 ? 's' : ''} sincronizada${successCount > 1 ? 's' : ''}` +
+                        (errorCount > 0 ? ` (${errorCount} falhas)` : '');
+            setGlobalSyncStatus('synced', msg);
+            setTimeout(() => updateGlobalStatus(), 3000);
         } catch (error) {
-            setGlobalSyncStatus('error');
+            setGlobalSyncStatus('error', '❌ Erro: ' + error.message);
         } finally {
             hideProgress();
             isSyncing = false;
@@ -1863,11 +1965,11 @@
         if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
-        if (!confirm('⚠️ Remover eventos do Google Calendar?')) return;
+        if (!confirm('⚠️ Remover todos os eventos do Google Calendar a partir de hoje?')) return;
         isSyncing = true;
         setButtonsEnabled(false);
         showProgress('⏳ Dessincronizando...');
-        setGlobalSyncStatus('syncing');
+        setGlobalSyncStatus('syncing', '🔄 Dessincronizando...');
         try {
             const activities = getAllActivitiesFromSchedule();
             const today = new Date();
@@ -1897,11 +1999,14 @@
                 updateProgress(processedDays, totalDays);
             }
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
+            // Marcar todas as atividades como pendentes (já que foram removidas)
+            markAllActivitiesAsPending();
+            saveScheduleToStorage();
             alert(`✅ ${deletedCount} eventos removidos.`);
-            setGlobalSyncStatus('synced');
-            setTimeout(() => updateSyncStatusUI('synced'), 3000);
+            setGlobalSyncStatus('pending', `⏳ ${deletedCount} removidos, pendentes`);
+            setTimeout(() => updateGlobalStatus(), 3000);
         } catch (error) {
-            setGlobalSyncStatus('error');
+            setGlobalSyncStatus('error', '❌ Erro: ' + error.message);
         } finally {
             hideProgress();
             isSyncing = false;
@@ -1929,14 +2034,14 @@
     // INICIALIZAÇÃO
     // ===================================================================
     window.addEventListener('load', function() {
-        loadGlobalSyncStatus();
+        loadGlobalStatusFromStorage();
         const hasSaved = loadScheduleFromStorage();
         attachTimeClickHandlers();
         initializeGoogleAuth();
         updateMonthInfo();
         const activeTab = document.querySelector('.tab-content.active');
         if (activeTab) updateImportantBox(activeTab.id);
-        updateAllActivityIndicators();
+        updateGlobalStatus();
     });
 
     window.addEventListener('click', function(e) {
