@@ -13,24 +13,59 @@
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
         .header h1 { font-size: 28px; margin-bottom: 10px; }
         .header p { opacity: 0.9; font-size: 14px; margin-bottom: 15px; }
-        .google-auth { display: flex; flex-direction: column; gap: 8px; align-items: center; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; }
-        .auth-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; width: 100%; }
-        .auth-btn, .action-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; background: white; color: #667eea; }
-        .auth-btn:hover, .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        /* ===== SEÇÕES DE AUTH E SYNC ===== */
+        .auth-section, .sync-section {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px 0;
+        }
+        .auth-section { background: rgba(0,0,0,0.08); border-radius: 8px; padding: 12px; margin-bottom: 6px; }
+        .sync-section { background: rgba(0,0,0,0.05); border-radius: 8px; padding: 12px; }
+
+        .auth-btn, .action-btn, .reset-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .auth-btn { background: white; color: #667eea; }
+        .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .reset-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; background: #ef4444; color: white; }
-        .reset-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #dc2626; }
+
+        .sync-btn { background: #10b981; color: white; }
+        .sync-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .sync-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .desync-btn { background: #ef4444; color: white; }
+        .desync-btn:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .desync-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
         .load-btn { background: #f59e0b; color: white; }
-        .load-btn:hover { background: #d97706; }
-        .sync-status { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .load-btn:hover { background: #d97706; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .reset-btn { background: #ef4444; color: white; }
+        .reset-btn:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+        .sync-status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
         .sync-status.synced { background: #10b981; color: white; }
         .sync-status.syncing { background: #f59e0b; color: white; }
         .sync-status.error { background: #ef4444; color: white; }
         .sync-status.disconnected { background: #6b7280; color: white; }
+
         .user-info { text-align: center; padding: 6px 0; color: white; font-size: 14px; }
         .month-info { text-align: center; padding: 4px 0; color: rgba(255,255,255,0.9); font-size: 13px; font-style: italic; }
-        .duration-control { display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,0.85); }
-        .duration-control input { width: 60px; padding: 4px 6px; border-radius: 4px; border: none; text-align: center; font-weight: 600; }
 
         /* ===== BARRA DE PROGRESSO COM GIF ===== */
         .progress-container {
@@ -73,21 +108,32 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .add-button-container {
+        /* ===== UTILITÁRIOS ACIMA DAS TABELAS ===== */
+        .utility-bar {
             display: flex;
-            justify-content: flex-end;
-            padding: 10px 0 5px 0;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
         }
-        .add-button-container .add-btn {
+        .utility-left {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .utility-right {
+            display: flex;
+            gap: 10px;
+        }
+        .add-btn {
             width: 48px; height: 48px; font-size: 26px; border-radius: 50%;
             background: #10b981; color: white; border: none; cursor: pointer;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
             transition: all 0.2s;
             display: flex; align-items: center; justify-content: center;
         }
-        .add-button-container .add-btn:hover { transform: scale(1.08) translateY(-2px); background: #059669; }
+        .add-btn:hover { transform: scale(1.08) translateY(-2px); background: #059669; }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th { background: #f0f0f0; padding: 12px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #ddd; }
@@ -150,32 +196,23 @@
     <div class="header">
         <h1>📅 Cronograma Semanal + Google Calendar</h1>
         <p>Sincronização automática com sua agenda Google</p>
-        <div class="google-auth">
-            <!-- Linha 1: Conta Google -->
-            <div class="auth-row">
-                <button class="auth-btn" id="connectBtn" onclick="handleConnectClick()">🔗 Conectar Google</button>
-                <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
-            </div>
-            <!-- Linha 2: Ações principais -->
-            <div class="auth-row">
-                <button class="auth-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
-                <button class="auth-btn" id="desyncBtn" onclick="desyncNow()" disabled style="background:#ef4444;color:white;">🗑️ Dessincronizar</button>
-                <button class="action-btn load-btn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
-                <button class="reset-btn" onclick="clearSchedule()">🗑️ Limpar Tudo</button>
-            </div>
-            <!-- Linha 3: Duração (mais discreta) -->
-            <div class="auth-row" style="gap:6px; justify-content:center; margin-top:4px;">
-                <div class="duration-control">
-                    <span>⏱️ Duração:</span>
-                    <input type="number" id="durationInput" min="1" max="1440" value="60">
-                    <span>min</span>
-                </div>
-            </div>
+
+        <!-- SEÇÃO 1: CONTA GOOGLE -->
+        <div class="auth-section">
+            <button class="auth-btn" id="connectBtn" onclick="handleConnectClick()">🔗 Conectar Google</button>
+            <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
             <div class="user-info" id="userInfo"></div>
-            <div class="month-info" id="monthInfo"></div>
         </div>
 
-        <!-- BARRA DE PROGRESSO COM GIF ONLINE -->
+        <!-- SEÇÃO 2: SINCRONIZAÇÃO -->
+        <div class="sync-section">
+            <button class="auth-btn sync-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
+            <button class="auth-btn desync-btn" id="desyncBtn" onclick="desyncNow()" disabled>🗑️ Dessincronizar</button>
+        </div>
+
+        <div class="month-info" id="monthInfo"></div>
+
+        <!-- BARRA DE PROGRESSO COM GIF -->
         <div class="progress-container" id="progressContainer">
             <div class="progress-gif">
                 <img id="progressGif" src="https://media.tenor.com/8jN9Y7YgJ5wAAAAC/duck-walk.gif" alt="Pato andando" onerror="this.style.display='none'">
@@ -198,10 +235,18 @@
             <p style="font-size:12px;">📆 A sincronização considera apenas <strong>dias a partir de hoje</strong>.</p>
         </div>
 
-        <div class="add-button-container">
-            <button class="add-btn" onclick="openAddModal()" title="Adicionar Nova Atividade">+</button>
+        <!-- BARRA DE UTILITÁRIOS (ACIMA DO CRONOGRAMA) -->
+        <div class="utility-bar">
+            <div class="utility-left">
+                <button class="action-btn load-btn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
+                <button class="reset-btn" onclick="clearSchedule()">🗑️ Limpar Tudo</button>
+            </div>
+            <div class="utility-right">
+                <button class="add-btn" onclick="openAddModal()" title="Adicionar Nova Atividade">+</button>
+            </div>
         </div>
 
+        <!-- ABAS -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('segunda', event)">Seg</button>
             <button class="tab-btn" onclick="switchTab('terca', event)">Ter</button>
@@ -327,42 +372,14 @@
     // CONFIGURAÇÕES
     // ===================================================================
     const CLIENT_ID = '405103894296-n00m60mb021u4os48kcnl4lmhmjkm6oe.apps.googleusercontent.com';
-    const CALENDAR_ID = 'primary';
     const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
     const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
     const STORAGE_KEY = 'weeklyScheduleData';
-    const DURATION_KEY = 'eventDuration';
 
     let isAuthenticated = false;
     let tokenClient;
     let isSyncing = false;
-    let eventDurationMinutes = 60;
-
-    // ===================================================================
-    // DURAÇÃO
-    // ===================================================================
-    function loadDuration() {
-        const saved = localStorage.getItem(DURATION_KEY);
-        if (saved) {
-            const val = parseInt(saved, 10);
-            if (!isNaN(val) && val > 0) {
-                eventDurationMinutes = val;
-                document.getElementById('durationInput').value = val;
-            }
-        }
-    }
-    function saveDuration() {
-        const input = document.getElementById('durationInput');
-        let val = parseInt(input.value, 10);
-        if (isNaN(val) || val < 1) val = 60;
-        eventDurationMinutes = val;
-        localStorage.setItem(DURATION_KEY, String(val));
-    }
-    document.addEventListener('change', function(e) {
-        if (e.target && e.target.id === 'durationInput') {
-            saveDuration();
-        }
-    });
+    const EVENT_DURATION_MINUTES = 60; // duração fixa (não editável)
 
     // ===================================================================
     // MODELO DE ROTINA
@@ -937,8 +954,7 @@
         const start = new Date(date);
         start.setHours(parseInt(hour), parseInt(minute), 0, 0);
         const end = new Date(date);
-        const duration = eventDurationMinutes || 60;
-        end.setHours(parseInt(hour), parseInt(minute) + duration, 0, 0);
+        end.setHours(parseInt(hour), parseInt(minute) + EVENT_DURATION_MINUTES, 0, 0);
         return {
             summary: activity.activity,
             description: `Atividade do cronograma: ${activity.activity}`,
@@ -1082,7 +1098,6 @@
     // INICIALIZAÇÃO
     // ===================================================================
     window.addEventListener('load', function() {
-        loadDuration();
         const hasSaved = loadScheduleFromStorage();
         attachTimeClickHandlers();
         initializeGoogleAuth();
