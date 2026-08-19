@@ -29,6 +29,30 @@
         .user-info { text-align: center; padding: 10px; color: white; font-size: 14px; }
         .month-info { text-align: center; padding: 10px; color: rgba(255,255,255,0.9); font-size: 13px; font-style: italic; }
 
+        /* ===== DURAÇÃO ===== */
+        .duration-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        .duration-control input {
+            width: 60px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: none;
+            font-weight: 600;
+            text-align: center;
+        }
+        .duration-control input:focus {
+            outline: 2px solid #fff;
+        }
+
         /* ===== BARRA DE PROGRESSO COM GIF ===== */
         .progress-container {
             display: none;
@@ -204,13 +228,18 @@
             <button class="reset-btn" onclick="clearSchedule()" title="Limpar todas as atividades">🗑️ Limpar Tudo</button>
             <button class="action-btn load-btn" onclick="loadRoutineModel()" title="Carregar modelo de rotina pré‑definida">📋 Carregar Modelo</button>
             <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
+            <!-- CONTROLE DE DURAÇÃO -->
+            <div class="duration-control">
+                <span>⏱️</span>
+                <input type="number" id="durationInput" min="1" max="1440" value="60">
+                <span>min</span>
+            </div>
         </div>
         <div class="user-info" id="userInfo"></div>
         <div class="month-info" id="monthInfo"></div>
 
         <!-- ===== BARRA DE PROGRESSO COM GIF ===== -->
         <div class="progress-container" id="progressContainer">
-            <!-- GIF do pato (substitua o src pelo seu arquivo) -->
             <div class="progress-gif">
                 <img id="progressGif" src="pato.gif" alt="Pato andando" onerror="this.style.display='none'">
             </div>
@@ -246,7 +275,7 @@
             <button class="tab-btn" onclick="switchTab('domingo', event)">Dom</button>
         </div>
 
-        <!-- TABELAS VAZIAS (apenas cabeçalho) -->
+        <!-- TABELAS -->
         <div id="segunda" class="tab-content active">
             <table id="segunda-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
             <div class="important-box" id="important-box-segunda">
@@ -365,10 +394,39 @@
     const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
     const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
     const STORAGE_KEY = 'weeklyScheduleData';
+    const DURATION_KEY = 'eventDuration';
 
     let isAuthenticated = false;
     let tokenClient;
     let isSyncing = false;
+    let eventDurationMinutes = 60; // padrão
+
+    // ===================================================================
+    // DURAÇÃO (carregar/salvar)
+    // ===================================================================
+    function loadDuration() {
+        const saved = localStorage.getItem(DURATION_KEY);
+        if (saved) {
+            const val = parseInt(saved, 10);
+            if (!isNaN(val) && val > 0) {
+                eventDurationMinutes = val;
+                document.getElementById('durationInput').value = val;
+            }
+        }
+    }
+    function saveDuration() {
+        const input = document.getElementById('durationInput');
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 1) val = 60;
+        eventDurationMinutes = val;
+        localStorage.setItem(DURATION_KEY, String(val));
+    }
+    // atualiza quando o usuário mudar o campo
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'durationInput') {
+            saveDuration();
+        }
+    });
 
     // ===================================================================
     // MODELO DE ROTINA (DEFAULT)
@@ -1009,7 +1067,9 @@
         const start = new Date(date);
         start.setHours(parseInt(hour), parseInt(minute), 0, 0);
         const end = new Date(date);
-        end.setHours(parseInt(hour)+1, parseInt(minute), 0, 0);
+        // Usa a duração configurada (em minutos)
+        const duration = eventDurationMinutes || 60;
+        end.setHours(parseInt(hour), parseInt(minute) + duration, 0, 0);
         return {
             summary: activity.activity,
             description: `Atividade do cronograma: ${activity.activity}`,
@@ -1193,6 +1253,7 @@
     // INICIALIZAÇÃO
     // ===================================================================
     window.addEventListener('load', function() {
+        loadDuration(); // carrega duração salva
         const hasSaved = loadScheduleFromStorage();
         if (!hasSaved) {
             // Opcional: carregar modelo automaticamente na primeira vez
