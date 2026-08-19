@@ -2,38 +2,61 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Cronograma Semanal + Google Calendar</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         /* ===== RESET E BASE ===== */
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-        .header h1 { font-size: 28px; margin-bottom: 10px; }
-        .header p { opacity: 0.9; font-size: 14px; margin-bottom: 15px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            padding: 10px; 
+            min-height: 100vh; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
+            overflow: hidden; 
+        }
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 20px 15px; 
+            text-align: center; 
+        }
+        .header h1 { font-size: 22px; margin-bottom: 6px; }
+        .header p { opacity: 0.9; font-size: 13px; margin-bottom: 12px; }
 
         /* ===== SEÇÕES DE AUTH E SYNC ===== */
         .auth-section, .sync-section {
             display: flex;
             flex-wrap: wrap;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            padding: 10px 0;
+            gap: 8px;
+            padding: 10px 8px;
+            border-radius: 8px;
+            width: 100%;
         }
-        .auth-section { background: rgba(0,0,0,0.08); border-radius: 8px; padding: 12px; margin-bottom: 6px; }
-        .sync-section { background: rgba(0,0,0,0.05); border-radius: 8px; padding: 12px; }
+        .auth-section { background: rgba(0,0,0,0.08); margin-bottom: 6px; }
+        .sync-section { background: rgba(0,0,0,0.05); }
 
         .auth-btn, .action-btn, .reset-btn {
-            padding: 10px 20px;
+            padding: 12px 18px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             font-size: 14px;
             transition: all 0.2s;
+            width: 100%;
+            max-width: 280px;
+            text-align: center;
         }
         .auth-btn { background: white; color: #667eea; }
         .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
@@ -64,27 +87,27 @@
         .sync-status.error { background: #ef4444; color: white; }
         .sync-status.disconnected { background: #6b7280; color: white; }
 
-        .user-info { text-align: center; padding: 6px 0; color: white; font-size: 14px; }
-        .month-info { text-align: center; padding: 4px 0; color: rgba(255,255,255,0.9); font-size: 13px; font-style: italic; }
+        .user-info { text-align: center; padding: 4px 0; color: white; font-size: 13px; }
+        .month-info { text-align: center; padding: 4px 0; color: rgba(255,255,255,0.9); font-size: 12px; font-style: italic; }
 
         /* ===== BARRA DE PROGRESSO COM GIF ===== */
         .progress-container {
             display: none;
-            margin: 15px auto 10px auto;
-            padding: 12px 20px;
+            margin: 12px auto 8px auto;
+            padding: 10px 14px;
             background: rgba(255,255,255,0.15);
             border-radius: 8px;
             max-width: 600px;
             text-align: center;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
         }
         .progress-container.active { display: flex; animation: fadeIn 0.3s; }
         .progress-gif {
             flex-shrink: 0;
-            width: 60px; height: 60px;
+            width: 50px; height: 50px;
             border-radius: 50%;
             overflow: hidden;
             background: rgba(255,255,255,0.1);
@@ -93,17 +116,40 @@
             justify-content: center;
         }
         .progress-gif img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .progress-content { flex: 1; min-width: 200px; }
-        .progress-message { font-size: 14px; font-weight: 500; color: white; margin-bottom: 6px; }
-        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
+        .progress-content { flex: 1; min-width: 150px; }
+        .progress-message { font-size: 13px; font-weight: 500; color: white; margin-bottom: 4px; }
+        .progress-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
         .progress-bar-fill { height: 100%; width: 0%; background: #10b981; border-radius: 4px; transition: width 0.3s ease; }
-        .progress-percent { font-size: 13px; color: white; margin-top: 4px; font-weight: 600; }
+        .progress-percent { font-size: 12px; color: white; margin-top: 3px; font-weight: 600; }
 
-        .tabs { display: flex; background: #f5f5f5; border-bottom: 1px solid #ddd; overflow-x: auto; }
-        .tab-btn { flex: 1; min-width: 120px; padding: 15px; background: none; border: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        /* ===== TABS ===== */
+        .tabs { 
+            display: flex; 
+            background: #f5f5f5; 
+            border-bottom: 1px solid #ddd; 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch;
+            padding: 0 4px;
+            gap: 2px;
+        }
+        .tab-btn { 
+            flex: 0 0 auto;
+            min-width: 60px;
+            padding: 12px 14px; 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 13px; 
+            font-weight: 600; 
+            color: #666; 
+            border-bottom: 3px solid transparent; 
+            transition: all 0.3s; 
+            white-space: nowrap;
+        }
         .tab-btn:hover { background: #efefef; color: #333; }
         .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
-        .content { padding: 30px; }
+        .content { padding: 15px; }
+
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -112,22 +158,29 @@
         .utility-bar {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 20px;
-            gap: 10px;
+            margin-bottom: 15px;
+            gap: 8px;
         }
         .utility-left {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
+            justify-content: center;
         }
         .utility-right {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+        }
+        .utility-bar .action-btn,
+        .utility-bar .reset-btn {
+            padding: 10px 16px;
+            font-size: 13px;
+            max-width: 200px;
         }
         .add-btn {
-            width: 48px; height: 48px; font-size: 26px; border-radius: 50%;
+            width: 44px; height: 44px; font-size: 22px; border-radius: 50%;
             background: #10b981; color: white; border: none; cursor: pointer;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
             transition: all 0.2s;
@@ -135,78 +188,313 @@
         }
         .add-btn:hover { transform: scale(1.08) translateY(-2px); background: #059669; }
 
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th { background: #f0f0f0; padding: 12px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #ddd; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
+        /* ===== TABELAS COM SCROLL HORIZONTAL ===== */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 400px;
+            font-size: 14px;
+        }
+        th { 
+            background: #f0f0f0; 
+            padding: 10px 12px; 
+            text-align: left; 
+            font-weight: 600; 
+            color: #333; 
+            border-bottom: 2px solid #ddd; 
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        td { 
+            padding: 10px 12px; 
+            border-bottom: 1px solid #eee; 
+        }
         tr:hover { background: #f9f9f9; }
-        .time { color: #667eea; font-weight: 600; min-width: 80px; cursor: pointer; }
+        .time { 
+            color: #667eea; 
+            font-weight: 600; 
+            min-width: 70px; 
+            cursor: pointer; 
+            white-space: nowrap;
+        }
         .time:hover { text-decoration: underline; }
-        .activity-cell { display: flex; align-items: center; flex-wrap: wrap; }
-        .activity-text { flex: 1; min-width: 150px; }
+        .activity-cell { 
+            display: flex; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 4px;
+        }
+        .activity-text { 
+            flex: 1; 
+            min-width: 100px; 
+            font-size: 13px;
+            word-break: break-word;
+        }
         .activity-duration-badge {
             display: inline-block;
             background: #e0e7ff;
             color: #4338ca;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
-            padding: 2px 10px;
+            padding: 2px 8px;
             border-radius: 12px;
-            margin-left: 8px;
             white-space: nowrap;
         }
-        .edit-btn, .delete-btn { background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.2s; padding: 4px 8px; }
+        .edit-btn, .delete-btn { 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 16px; 
+            opacity: 0.6; 
+            transition: opacity 0.2s; 
+            padding: 4px 6px; 
+        }
         .edit-btn { color: #667eea; }
-        .edit-btn:hover { color: #5568d3; }
+        .edit-btn:hover { opacity: 1; color: #5568d3; }
         .delete-btn { color: #ef4444; }
-        .delete-btn:hover { color: #dc2626; }
+        .delete-btn:hover { opacity: 1; color: #dc2626; }
         tr:hover .edit-btn, tr:hover .delete-btn { opacity: 1; }
-        .sync-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+        .sync-indicator { 
+            display: inline-block; 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            margin-right: 6px; 
+            flex-shrink: 0; 
+        }
         .sync-indicator.synced { background: #10b981; }
         .sync-indicator.pending { background: #f59e0b; animation: pulse 1s infinite; }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
 
-        .important-box { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 12px; padding: 20px 25px; margin-top: 25px; box-shadow: 0 4px 12px rgba(245,158,11,0.2); }
-        .important-box h3 { color: #92400e; font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .important-box h3 span { font-size: 22px; }
-        .important-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-        .important-list li { background: white; padding: 12px 18px; border-radius: 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #f59e0b; font-size: 15px; color: #1f2937; }
-        .important-list .imp-time { font-weight: 600; color: #667eea; min-width: 60px; font-size: 14px; }
-        .important-list .imp-emoji { font-size: 20px; }
-        .important-empty { color: #78350f; font-style: italic; padding: 8px 0; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
+        /* ===== IMPORTANT BOX ===== */
+        .important-box { 
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+            border: 2px solid #f59e0b; 
+            border-radius: 12px; 
+            padding: 15px 18px; 
+            margin-top: 15px; 
+            box-shadow: 0 4px 12px rgba(245,158,11,0.2); 
+        }
+        .important-box h3 { 
+            color: #92400e; 
+            font-size: 16px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        .important-box h3 span { font-size: 20px; }
+        .important-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+        .important-list li { 
+            background: white; 
+            padding: 10px 14px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+            border-left: 4px solid #f59e0b; 
+            font-size: 14px; 
+            color: #1f2937; 
+        }
+        .important-list .imp-time { font-weight: 600; color: #667eea; min-width: 50px; font-size: 13px; }
+        .important-list .imp-emoji { font-size: 18px; }
+        .important-empty { color: #78350f; font-style: italic; padding: 6px 0; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
 
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); animation: fadeIn 0.3s; }
+        /* ===== MODAIS ===== */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
+            animation: fadeIn 0.3s; 
+            padding: 10px;
+        }
         .modal.show { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); animation: slideUp 0.3s; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity:0; } to { transform: translateY(0); opacity:1; } }
-        .modal-header { margin-bottom: 20px; }
-        .modal-header h2 { color: #333; font-size: 18px; margin-bottom: 5px; }
+        .modal-content { 
+            background-color: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            width: 100%; 
+            max-width: 500px; 
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); 
+            animation: slideUp 0.3s; 
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+        .modal-header { margin-bottom: 15px; }
+        .modal-header h2 { color: #333; font-size: 18px; margin-bottom: 4px; }
         .modal-header p { color: #666; font-size: 14px; }
-        .modal-body label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; font-size: 14px; margin-top: 12px; }
-        .modal-body input[type="text"], .modal-body input[type="time"], .modal-body input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; }
-        .modal-body input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
-        .days-checkbox-group { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 5px; }
-        .day-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #444; cursor: pointer; }
-        #noteText { width: 100%; min-height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical; }
-        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-        .modal-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .modal-body label { 
+            display: block; 
+            font-weight: 600; 
+            color: #333; 
+            margin-bottom: 6px; 
+            font-size: 14px; 
+            margin-top: 12px; 
+        }
+        .modal-body input[type="text"], 
+        .modal-body input[type="time"], 
+        .modal-body input[type="number"] { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-family: inherit; 
+            font-size: 16px; 
+        }
+        .modal-body input:focus { 
+            outline: none; 
+            border-color: #667eea; 
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1); 
+        }
+        .days-checkbox-group { 
+            display: grid; 
+            grid-template-columns: repeat(2,1fr); 
+            gap: 6px; 
+            margin-top: 4px; 
+        }
+        .day-checkbox-label { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            font-size: 14px; 
+            color: #444; 
+            cursor: pointer; 
+            padding: 4px 0;
+        }
+        .day-checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        #noteText { 
+            width: 100%; 
+            min-height: 100px; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-family: inherit; 
+            font-size: 16px; 
+            resize: vertical; 
+        }
+        #noteText:focus { 
+            outline: none; 
+            border-color: #667eea; 
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1); 
+        }
+        .modal-footer { 
+            display: flex; 
+            gap: 10px; 
+            justify-content: flex-end; 
+            margin-top: 18px; 
+        }
+        .modal-btn { 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 15px; 
+            transition: all 0.2s; 
+        }
         .modal-btn.save { background: #667eea; color: white; }
         .modal-btn.save:hover { background: #5568d3; }
         .modal-btn.cancel { background: #f0f0f0; color: #333; }
         .modal-btn.cancel:hover { background: #e0e0e0; }
-        .color-legend { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .color-legend h3 { font-size: 16px; color: #333; margin-bottom: 15px; font-weight: 600; }
-        .legend-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 15px; }
-        .legend-item { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #555; }
-        .legend-box { width: 20px; height: 20px; border-radius: 4px; }
-        .config-message { background: #fef3c7; border: 1px solid #fbbf24; color: #92400e; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 14px; }
-        .config-message p { margin: 5px 0; }
+
+        /* ===== LEGENDAS ===== */
+        .color-legend { 
+            background: #f9f9f9; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+        }
+        .color-legend h3 { font-size: 14px; color: #333; margin-bottom: 10px; font-weight: 600; }
+        .legend-items { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); 
+            gap: 10px; 
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; }
+        .legend-box { width: 16px; height: 16px; border-radius: 4px; }
+
+        /* ===== CONFIG MESSAGE ===== */
+        .config-message { 
+            background: #fef3c7; 
+            border: 1px solid #fbbf24; 
+            color: #92400e; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            text-align: center; 
+            font-size: 13px; 
+        }
+        .config-message p { margin: 4px 0; }
+
+        /* ===== MEDIA QUERIES ===== */
+        @media (min-width: 600px) {
+            .auth-section, .sync-section {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .auth-btn, .action-btn, .reset-btn {
+                width: auto;
+                max-width: none;
+                padding: 10px 20px;
+            }
+            .utility-bar {
+                justify-content: space-between;
+            }
+            .utility-left {
+                justify-content: flex-start;
+            }
+            .tabs .tab-btn {
+                flex: 1;
+                min-width: 80px;
+            }
+            .header { padding: 30px; }
+            .header h1 { font-size: 28px; }
+            .content { padding: 25px 30px; }
+            .modal-content { padding: 30px; }
+            table { font-size: 15px; min-width: auto; }
+            .table-wrapper { overflow-x: auto; }
+            .activity-text { font-size: 14px; }
+        }
+
+        @media (max-width: 400px) {
+            .header h1 { font-size: 18px; }
+            .header p { font-size: 12px; }
+            .auth-btn, .action-btn, .reset-btn { font-size: 13px; padding: 10px 14px; }
+            .tab-btn { font-size: 12px; padding: 10px 10px; min-width: 50px; }
+            .activity-text { font-size: 12px; min-width: 80px; }
+            td, th { padding: 8px 8px; }
+            .important-box { padding: 12px 14px; }
+            .important-box h3 { font-size: 14px; }
+            .important-list li { font-size: 13px; padding: 8px 12px; }
+            .modal-content { padding: 16px; }
+            .modal-btn { padding: 10px 18px; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>📅 Cronograma Semanal + Google Calendar</h1>
-        <p>Sincronização automática com sua agenda Google</p>
+        <h1>📅 Cronograma Semanal</h1>
+        <p>Sincronização automática com Google Calendar</p>
 
         <!-- SEÇÃO 1: CONTA GOOGLE -->
         <div class="auth-section">
@@ -229,7 +517,7 @@
                 <img id="progressGif" src="https://media1.tenor.com/m/XG8WXd4R7RYAAAAC/pato-caminando.gif" alt="Pato andando" onerror="this.style.display='none'">
             </div>
             <div class="progress-content">
-                <div class="progress-message" id="progressMessage">⏳ Sincronização em andamento. Aguarde...</div>
+                <div class="progress-message" id="progressMessage">⏳ Sincronizando...</div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" id="progressFill"></div>
                 </div>
@@ -240,14 +528,13 @@
 
     <div class="content">
         <div class="config-message">
-            <p><strong>💡 Dica:</strong> Comece carregando um modelo de rotina ou crie suas próprias atividades.</p>
-            <p style="font-size:12px; margin-top:8px;">📋 Clique em <strong>"Carregar Modelo"</strong> para preencher com sua rotina padrão.</p>
-            <p style="font-size:12px;">💾 Alterações são salvas automaticamente. ⭐ Atividades com <strong>emoji</strong> aparecem no box em destaque.</p>
-            <p style="font-size:12px;">📆 A sincronização considera apenas <strong>dias a partir de hoje</strong>.</p>
-            <p style="font-size:12px; color: #667eea;">⏱️ Cada atividade pode ter uma <strong>duração personalizada</strong> (em minutos).</p>
+            <p>💡 Carregue um modelo de rotina ou crie suas atividades.</p>
+            <p style="font-size:12px;">📋 <strong>"Carregar Modelo"</strong> preenche com rotina padrão.</p>
+            <p style="font-size:12px;">⭐ Atividades com <strong>emoji</strong> aparecem em destaque.</p>
+            <p style="font-size:12px;">⏱️ Cada atividade tem duração personalizável.</p>
         </div>
 
-        <!-- BARRA DE UTILITÁRIOS (ACIMA DO CRONOGRAMA) -->
+        <!-- BARRA DE UTILITÁRIOS -->
         <div class="utility-bar">
             <div class="utility-left">
                 <button class="action-btn load-btn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
@@ -271,62 +558,74 @@
 
         <!-- TABELAS -->
         <div id="segunda" class="tab-content active">
-            <table id="segunda-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            <div class="table-wrapper">
+                <table id="segunda-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            </div>
             <div class="important-box" id="important-box-segunda">
-                <h3><span>⭐</span> Atividades Importantes do Dia</h3>
+                <h3><span>⭐</span> Atividades Importantes</h3>
                 <ul class="important-list" id="important-list-segunda"></ul>
             </div>
         </div>
         <div id="terca" class="tab-content">
-            <table id="terca-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            <div class="table-wrapper">
+                <table id="terca-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            </div>
             <div class="important-box" id="important-box-terca">
-                <h3><span>⭐</span> Atividades Importantes do Dia</h3>
+                <h3><span>⭐</span> Atividades Importantes</h3>
                 <ul class="important-list" id="important-list-terca"></ul>
             </div>
         </div>
         <div id="quarta" class="tab-content">
-            <table id="quarta-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            <div class="table-wrapper">
+                <table id="quarta-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            </div>
             <div class="important-box" id="important-box-quarta">
-                <h3><span>⭐</span> Atividades Importantes do Dia</h3>
+                <h3><span>⭐</span> Atividades Importantes</h3>
                 <ul class="important-list" id="important-list-quarta"></ul>
             </div>
         </div>
         <div id="quinta" class="tab-content">
-            <table id="quinta-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            <div class="table-wrapper">
+                <table id="quinta-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            </div>
             <div class="important-box" id="important-box-quinta">
-                <h3><span>⭐</span> Atividades Importantes do Dia</h3>
+                <h3><span>⭐</span> Atividades Importantes</h3>
                 <ul class="important-list" id="important-list-quinta"></ul>
             </div>
         </div>
         <div id="sexta" class="tab-content">
-            <table id="sexta-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            <div class="table-wrapper">
+                <table id="sexta-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            </div>
             <div class="important-box" id="important-box-sexta">
-                <h3><span>⭐</span> Atividades Importantes do Dia</h3>
+                <h3><span>⭐</span> Atividades Importantes</h3>
                 <ul class="important-list" id="important-list-sexta"></ul>
             </div>
         </div>
         <div id="sabado" class="tab-content">
-            <table id="sabado-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            <div class="table-wrapper">
+                <table id="sabado-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            </div>
             <div class="important-box" id="important-box-sabado">
-                <h3><span>⭐</span> Atividades Importantes do Dia</h3>
+                <h3><span>⭐</span> Atividades Importantes</h3>
                 <ul class="important-list" id="important-list-sabado"></ul>
             </div>
         </div>
         <div id="domingo" class="tab-content">
-            <table id="domingo-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            <div class="table-wrapper">
+                <table id="domingo-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
+            </div>
             <div class="important-box" id="important-box-domingo">
-                <h3><span>⭐</span> Atividades Importantes do Dia</h3>
+                <h3><span>⭐</span> Atividades Importantes</h3>
                 <ul class="important-list" id="important-list-domingo"></ul>
             </div>
         </div>
-    </div>
 
-    <div style="max-width:1200px; margin:30px auto; padding:0 20px;">
         <div class="color-legend">
             <h3>📡 Status de Sincronização</h3>
             <div class="legend-items">
                 <div class="legend-item"><div class="legend-box" style="background:#10b981;"></div><span>✅ Sincronizado</span></div>
-                <div class="legend-item"><div class="legend-box" style="background:#f59e0b; animation: pulse 1s infinite;"></div><span>⏳ Pendente de Sincronização</span></div>
+                <div class="legend-item"><div class="legend-box" style="background:#f59e0b; animation: pulse 1s infinite;"></div><span>⏳ Pendente</span></div>
             </div>
         </div>
     </div>
@@ -367,13 +666,13 @@
             <input type="number" id="newActivityDuration" min="1" max="1440" value="60">
             <label>Dias da Semana:</label>
             <div class="days-checkbox-group">
-                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="segunda"> Segunda</label>
-                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="terca"> Terça</label>
-                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quarta"> Quarta</label>
-                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quinta"> Quinta</label>
-                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sexta"> Sexta</label>
-                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sabado"> Sábado</label>
-                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="domingo"> Domingo</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="segunda"> Seg</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="terca"> Ter</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quarta"> Qua</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quinta"> Qui</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sexta"> Sex</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="sabado"> Sab</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="domingo"> Dom</label>
             </div>
         </div>
         <div class="modal-footer">
@@ -403,74 +702,74 @@
         segunda: [
             { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
             { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã (colocar comida para descongelar)", duration: 30 },
-            { time: "09:40", activity: "🧺 Colocar roupas na máquina (Tarefa do dia)", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
+            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20 },
+            { time: "10:15", activity: "Busca por emprego", duration: 120 },
             { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
             { time: "16:00", activity: "Exercício físico", duration: 60 },
             { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "18:45", activity: "🧺 Transferir roupas + pendurar", duration: 30 },
+            { time: "18:45", activity: "🧺 Transferir roupas", duration: 30 },
             { time: "19:00", activity: "Jantar", duration: 60 },
             { time: "20:00", activity: "Leitura", duration: 30 },
             { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "21:30", activity: "Arrumação", duration: 30 }
         ],
         terca: [
             { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
             { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã (colocar comida para descongelar)", duration: 30 },
-            { time: "09:40", activity: "🧼 Colocar toalhas e tapetinhos na máquina (Tarefa do dia)", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
+            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "09:40", activity: "🧼 Colocar toalhas na máquina", duration: 20 },
+            { time: "10:15", activity: "Busca por emprego", duration: 120 },
             { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
             { time: "16:00", activity: "Exercício físico", duration: 60 },
             { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "18:45", activity: "🧼 Pendurar toalhas e tapetinhos", duration: 30 },
+            { time: "18:45", activity: "🧼 Pendurar toalhas", duration: 30 },
             { time: "19:00", activity: "Jantar", duration: 60 },
             { time: "20:00", activity: "Leitura", duration: 30 },
             { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "21:30", activity: "Arrumação", duration: 30 }
         ],
         quarta: [
             { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
             { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã (colocar comida para descongelar)", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
+            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "10:15", activity: "Busca por emprego", duration: 120 },
             { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
-            { time: "15:00", activity: "🧹 Limpeza completa do piso (cozinha + área de serviço)", duration: 60 },
-            { time: "16:00", activity: "🐱 Troca completa da areia dos gatos", duration: 45 },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
+            { time: "15:00", activity: "🧹 Limpeza do piso", duration: 60 },
+            { time: "16:00", activity: "🐱 Troca da areia dos gatos", duration: 45 },
             { time: "16:45", activity: "Exercício físico", duration: 60 },
             { time: "17:00", activity: "Estudos", duration: 90 },
             { time: "19:00", activity: "Jantar", duration: 60 },
             { time: "20:00", activity: "Leitura", duration: 30 },
             { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "21:30", activity: "Arrumação", duration: 30 }
         ],
         quinta: [
             { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
             { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã (colocar comida para descongelar)", duration: 30 },
-            { time: "09:40", activity: "🧺 Colocar roupas na máquina (Tarefa do dia)", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
+            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20 },
+            { time: "10:15", activity: "Busca por emprego", duration: 120 },
             { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
             { time: "16:00", activity: "Exercício físico", duration: 60 },
             { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "18:45", activity: "🧺 Transferir roupas + pendurar", duration: 30 },
+            { time: "18:45", activity: "🧺 Transferir roupas", duration: 30 },
             { time: "19:00", activity: "Jantar", duration: 60 },
             { time: "20:00", activity: "Leitura", duration: 30 },
             { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "21:30", activity: "Arrumação", duration: 30 }
         ],
         sexta: [
             { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
             { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã (colocar comida para descongelar)", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
+            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "10:15", activity: "Busca por emprego", duration: 120 },
             { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30 },
             { time: "15:00", activity: "🛏️ Organização do quarto", duration: 45 },
             { time: "16:00", activity: "🌿 Limpeza da varanda", duration: 45 },
             { time: "16:45", activity: "Exercício físico", duration: 60 },
@@ -478,26 +777,26 @@
             { time: "19:00", activity: "Jantar", duration: 60 },
             { time: "20:00", activity: "Leitura", duration: 30 },
             { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "21:30", activity: "Arrumação", duration: 30 }
         ],
         sabado: [
             { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
             { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã (colocar comida para descongelar)", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
+            { time: "09:30", activity: "Café da manhã", duration: 30 },
+            { time: "10:15", activity: "Busca por emprego", duration: 120 },
             { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "13:00", activity: "🚿 Faxina pesada do banheiro", duration: 90 },
-            { time: "14:30", activity: "🐱 Limpeza do quartinho dos gatos", duration: 45 },
-            { time: "15:15", activity: "🧺 Lavar roupa de cama e tapete do quarto (quinzenal)", duration: 30 },
+            { time: "13:00", activity: "🚿 Faxina do banheiro", duration: 90 },
+            { time: "14:30", activity: "🐱 Limpeza quartinho dos gatos", duration: 45 },
+            { time: "15:15", activity: "🧺 Lavar roupa de cama", duration: 30 },
             { time: "16:00", activity: "Exercício físico", duration: 60 },
             { time: "17:00", activity: "Estudos", duration: 90 },
             { time: "19:00", activity: "Jantar", duration: 60 },
             { time: "20:00", activity: "Leitura", duration: 30 },
             { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "21:30", activity: "Arrumação", duration: 30 }
         ],
         domingo: [
-            { time: "09:00", activity: "🍳 Preparo das refeições da semana (arroz, feijão, frango)", duration: 120 },
+            { time: "09:00", activity: "🍳 Preparo das refeições da semana", duration: 120 },
             { time: "12:00", activity: "Congelamento das refeições", duration: 60 },
             { time: "14:00", activity: "Resto do dia livre", duration: 0 }
         ]
@@ -508,7 +807,7 @@
     // ===================================================================
     function showProgress(message) {
         document.getElementById('progressContainer').classList.add('active');
-        document.getElementById('progressMessage').textContent = message || '⏳ Sincronização em andamento. Aguarde...';
+        document.getElementById('progressMessage').textContent = message || '⏳ Sincronizando...';
     }
     function updateProgress(current, total) {
         const pct = Math.min(100, Math.round((current / total) * 100));
@@ -522,10 +821,8 @@
     }
 
     function setButtonsEnabled(enabled) {
-        const syncBtn = document.getElementById('syncBtn');
-        const desyncBtn = document.getElementById('desyncBtn');
-        syncBtn.disabled = !(enabled && isAuthenticated);
-        desyncBtn.disabled = !(enabled && isAuthenticated);
+        document.getElementById('syncBtn').disabled = !(enabled && isAuthenticated);
+        document.getElementById('desyncBtn').disabled = !(enabled && isAuthenticated);
     }
 
     // ===================================================================
@@ -550,7 +847,7 @@
         });
         listEl.innerHTML = '';
         if (importantItems.length === 0) {
-            listEl.innerHTML = `<li class="important-empty">✨ Nenhuma atividade com emoji neste dia.</li>`;
+            listEl.innerHTML = `<li class="important-empty">✨ Nenhuma atividade com emoji.</li>`;
             return;
         }
         importantItems.sort((a,b) => a.time.localeCompare(b.time));
@@ -646,13 +943,13 @@
         });
         localStorage.removeItem(STORAGE_KEY);
         updateAllImportantBoxes();
-        updateSyncStatus('pending', '⏳ Tabela limpa – pendente de sincronização');
+        updateSyncStatus('pending', '⏳ Tabela limpa');
         alert('✅ Todas as atividades foram removidas.');
     }
 
     function loadRoutineModel() {
-        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização atual.'); return; }
-        if (!confirm('⚠️ Isso vai substituir todas as atividades atuais pelo modelo padrão. Deseja continuar?')) return;
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização atual.'); return; }
+        if (!confirm('⚠️ Substituir atividades pelo modelo padrão?')) return;
         const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
         days.forEach(day => {
             const table = document.getElementById(day+'-table');
@@ -680,8 +977,8 @@
         });
         saveScheduleToStorage();
         updateAllImportantBoxes();
-        updateSyncStatus('pending', '⏳ Modelo carregado – pendente de sincronização');
-        alert('✅ Rotina modelo carregada com sucesso!');
+        updateSyncStatus('pending', '⏳ Modelo carregado');
+        alert('✅ Rotina modelo carregada!');
     }
 
     // ===================================================================
@@ -744,15 +1041,15 @@
     // EDIÇÃO
     // ===================================================================
     function saveNewActivity() {
-        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para adicionar atividades.'); return; }
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const name = document.getElementById('newActivityName').value.trim();
         const time = document.getElementById('newActivityTime').value;
         const duration = parseInt(document.getElementById('newActivityDuration').value) || 60;
         const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
         
         if (!name) { alert('Informe o nome da atividade.'); return; }
-        if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido (HH:MM).'); return; }
-        if (duration < 1) { alert('A duração deve ser de pelo menos 1 minuto.'); return; }
+        if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido.'); return; }
+        if (duration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (selectedDays.length === 0) { alert('Selecione pelo menos um dia.'); return; }
         
         selectedDays.forEach(day => {
@@ -789,8 +1086,8 @@
 
     function deleteActivity(day, cellElement, event) {
         event.stopPropagation();
-        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para deletar atividades.'); return; }
-        if (confirm('Tem certeza que deseja deletar esta atividade?')) {
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
+        if (confirm('Deletar esta atividade?')) {
             cellElement.closest('tr').remove();
             saveScheduleToStorage();
             updateSyncStatus('pending', '⏳ Alterações pendentes');
@@ -799,7 +1096,7 @@
     }
 
     function saveContent() {
-        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para salvar alterações.'); return; }
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const modal = document.getElementById('noteModal');
         const textarea = document.getElementById('noteText');
         const durationInput = document.getElementById('editDuration');
@@ -809,7 +1106,7 @@
         const newDuration = parseInt(durationInput.value) || 60;
         
         if (!newActivity) { alert('A atividade não pode ficar vazia.'); return; }
-        if (newDuration < 1) { alert('A duração deve ser de pelo menos 1 minuto.'); return; }
+        if (newDuration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         
         const table = document.getElementById(day+'-table');
         const rows = table.querySelectorAll('tr');
@@ -829,7 +1126,7 @@
     }
 
     function editTime(day, element, currentTime) {
-        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para editar horários.'); return; }
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const newTime = prompt('Editar horário (HH:MM):', currentTime);
         if (!newTime || newTime === currentTime) return;
         if (!TIME_REGEX.test(newTime)) { alert('Horário inválido.'); return; }
@@ -1020,12 +1317,12 @@
     }
 
     async function syncWithGoogleCalendar() {
-        if (isSyncing) { alert('⚠️ Uma sincronização já está em andamento. Aguarde.'); return; }
+        if (isSyncing) { alert('⚠️ Sincronização em andamento.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
         isSyncing = true;
         setButtonsEnabled(false);
-        showProgress('⏳ Sincronização em andamento. Aguarde...');
+        showProgress('⏳ Sincronizando...');
         updateSyncStatus('syncing', '🔄 Sincronizando...');
         try {
             const activities = getAllActivitiesFromSchedule();
@@ -1073,8 +1370,8 @@
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
             const startDateStr = today.toLocaleDateString('pt-BR');
             const endDateStr = new Date(year, month, daysInMonth).toLocaleDateString('pt-BR');
-            updateSyncStatus('synced', `✅ ${successCount} eventos sincronizados (${startDateStr} a ${endDateStr})`);
-            setTimeout(() => updateSyncStatus('synced', '✅ Pronto para sincronizar'), 3000);
+            updateSyncStatus('synced', `✅ ${successCount} eventos sincronizados`);
+            setTimeout(() => updateSyncStatus('synced', '✅ Pronto'), 3000);
         } catch (error) {
             updateSyncStatus('error', '❌ Erro: ' + error.message);
         } finally {
@@ -1085,13 +1382,13 @@
     }
 
     async function desyncNow() {
-        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização atual.'); return; }
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
-        if (!confirm('⚠️ Deseja deletar todos os eventos a partir de hoje do Google Calendar?')) return;
+        if (!confirm('⚠️ Remover eventos do Google Calendar?')) return;
         isSyncing = true;
         setButtonsEnabled(false);
-        showProgress('⏳ Dessincronização em andamento. Aguarde...');
+        showProgress('⏳ Dessincronizando...');
         updateSyncStatus('syncing', '🔄 Dessincronizando...');
         try {
             const activities = getAllActivitiesFromSchedule();
@@ -1122,9 +1419,9 @@
                 updateProgress(processedDays, totalDays);
             }
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
-            updateSyncStatus('synced', `✅ ${deletedCount} eventos removidos`);
-            alert(`✅ Dessincronização concluída!\n\n${deletedCount} eventos foram removidos do Google Calendar.`);
-            setTimeout(() => updateSyncStatus('synced', '✅ Pronto para sincronizar'), 3000);
+            updateSyncStatus('synced', `✅ ${deletedCount} removidos`);
+            alert(`✅ ${deletedCount} eventos removidos.`);
+            setTimeout(() => updateSyncStatus('synced', '✅ Pronto'), 3000);
         } catch (error) {
             updateSyncStatus('error', '❌ Erro: ' + error.message);
         } finally {
