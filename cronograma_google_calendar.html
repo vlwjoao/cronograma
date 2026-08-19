@@ -13,7 +13,8 @@
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
         .header h1 { font-size: 28px; margin-bottom: 10px; }
         .header p { opacity: 0.9; font-size: 14px; margin-bottom: 15px; }
-        .google-auth { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 8px; align-items: center; }
+        .google-auth { display: flex; flex-direction: column; gap: 8px; align-items: center; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; }
+        .auth-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; width: 100%; }
         .auth-btn, .action-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; background: white; color: #667eea; }
         .auth-btn:hover, .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -21,37 +22,15 @@
         .reset-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #dc2626; }
         .load-btn { background: #f59e0b; color: white; }
         .load-btn:hover { background: #d97706; }
-        .sync-status { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 10px; }
+        .sync-status { display: inline-block; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .sync-status.synced { background: #10b981; color: white; }
         .sync-status.syncing { background: #f59e0b; color: white; }
         .sync-status.error { background: #ef4444; color: white; }
         .sync-status.disconnected { background: #6b7280; color: white; }
-        .user-info { text-align: center; padding: 10px; color: white; font-size: 14px; }
-        .month-info { text-align: center; padding: 10px; color: rgba(255,255,255,0.9); font-size: 13px; font-style: italic; }
-
-        /* ===== DURAÇÃO ===== */
-        .duration-control {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255,255,255,0.15);
-            padding: 6px 12px;
-            border-radius: 6px;
-            color: white;
-            font-weight: 500;
-            font-size: 13px;
-        }
-        .duration-control input {
-            width: 60px;
-            padding: 4px 6px;
-            border-radius: 4px;
-            border: none;
-            font-weight: 600;
-            text-align: center;
-        }
-        .duration-control input:focus {
-            outline: 2px solid #fff;
-        }
+        .user-info { text-align: center; padding: 6px 0; color: white; font-size: 14px; }
+        .month-info { text-align: center; padding: 4px 0; color: rgba(255,255,255,0.9); font-size: 13px; font-style: italic; }
+        .duration-control { display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,0.85); }
+        .duration-control input { width: 60px; padding: 4px 6px; border-radius: 4px; border: none; text-align: center; font-weight: 600; }
 
         /* ===== BARRA DE PROGRESSO COM GIF ===== */
         .progress-container {
@@ -67,14 +46,10 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-        .progress-container.active {
-            display: flex;
-            animation: fadeIn 0.3s;
-        }
+        .progress-container.active { display: flex; animation: fadeIn 0.3s; }
         .progress-gif {
             flex-shrink: 0;
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             border-radius: 50%;
             overflow: hidden;
             background: rgba(255,255,255,0.1);
@@ -82,44 +57,12 @@
             align-items: center;
             justify-content: center;
         }
-        .progress-gif img,
-        .progress-gif video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .progress-content {
-            flex: 1;
-            min-width: 200px;
-        }
-        .progress-message {
-            font-size: 14px;
-            font-weight: 500;
-            color: white;
-            margin-bottom: 6px;
-        }
-        .progress-bar-bg {
-            width: 100%;
-            height: 8px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-        .progress-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: #10b981;
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-        .progress-percent {
-            font-size: 13px;
-            color: white;
-            margin-top: 4px;
-            font-weight: 600;
-        }
+        .progress-gif img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .progress-content { flex: 1; min-width: 200px; }
+        .progress-message { font-size: 14px; font-weight: 500; color: white; margin-bottom: 6px; }
+        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; width: 0%; background: #10b981; border-radius: 4px; transition: width 0.3s ease; }
+        .progress-percent { font-size: 13px; color: white; margin-top: 4px; font-weight: 600; }
 
         .tabs { display: flex; background: #f5f5f5; border-bottom: 1px solid #ddd; overflow-x: auto; }
         .tab-btn { flex: 1; min-width: 120px; padding: 15px; background: none; border: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.3s; }
@@ -138,25 +81,13 @@
             border-bottom: 1px solid #eee;
         }
         .add-button-container .add-btn {
-            width: 48px;
-            height: 48px;
-            font-size: 26px;
-            border-radius: 50%;
-            background: #10b981;
-            color: white;
-            border: none;
-            cursor: pointer;
+            width: 48px; height: 48px; font-size: 26px; border-radius: 50%;
+            background: #10b981; color: white; border: none; cursor: pointer;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
-        .add-button-container .add-btn:hover {
-            transform: scale(1.08) translateY(-2px);
-            background: #059669;
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
-        }
+        .add-button-container .add-btn:hover { transform: scale(1.08) translateY(-2px); background: #059669; }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th { background: #f0f0f0; padding: 12px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #ddd; }
@@ -166,9 +97,10 @@
         .time:hover { text-decoration: underline; }
         .activity-cell { display: flex; align-items: center; flex-wrap: wrap; }
         .activity-text { flex: 1; min-width: 150px; }
-        .edit-btn { background: none; border: none; color: #667eea; cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.2s; padding: 4px 8px; margin-left: 10px; }
+        .edit-btn, .delete-btn { background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.2s; padding: 4px 8px; }
+        .edit-btn { color: #667eea; }
         .edit-btn:hover { color: #5568d3; }
-        .delete-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.2s; padding: 4px 8px; margin-left: 5px; }
+        .delete-btn { color: #ef4444; }
         .delete-btn:hover { color: #dc2626; }
         tr:hover .edit-btn, tr:hover .delete-btn { opacity: 1; }
         .sync-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
@@ -192,15 +124,12 @@
         .modal-header { margin-bottom: 20px; }
         .modal-header h2 { color: #333; font-size: 18px; margin-bottom: 5px; }
         .modal-header p { color: #666; font-size: 14px; }
-        .modal-body { margin-bottom: 20px; }
         .modal-body label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; font-size: 14px; margin-top: 12px; }
-        .modal-body input[type="text"], .modal-body input[type="time"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; }
+        .modal-body input[type="text"], .modal-body input[type="time"], .modal-body input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; }
         .modal-body input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
         .days-checkbox-group { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 5px; }
         .day-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #444; cursor: pointer; }
-        #noteLabel { display: block; font-weight: 600; color: #333; margin-bottom: 10px; font-size: 14px; }
         #noteText { width: 100%; min-height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical; }
-        #noteText:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
         .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
         .modal-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; }
         .modal-btn.save { background: #667eea; color: white; }
@@ -222,26 +151,34 @@
         <h1>📅 Cronograma Semanal + Google Calendar</h1>
         <p>Sincronização automática com sua agenda Google</p>
         <div class="google-auth">
-            <button class="auth-btn" id="connectBtn" onclick="handleConnectClick()">🔗 Conectar Google</button>
-            <button class="auth-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
-            <button class="auth-btn" id="desyncBtn" onclick="desyncNow()" disabled style="background:#ef4444;color:white;">🗑️ Dessincronizar</button>
-            <button class="reset-btn" onclick="clearSchedule()" title="Limpar todas as atividades">🗑️ Limpar Tudo</button>
-            <button class="action-btn load-btn" onclick="loadRoutineModel()" title="Carregar modelo de rotina pré‑definida">📋 Carregar Modelo</button>
-            <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
-            <!-- CONTROLE DE DURAÇÃO -->
-            <div class="duration-control">
-                <span>⏱️</span>
-                <input type="number" id="durationInput" min="1" max="1440" value="60">
-                <span>min</span>
+            <!-- Linha 1: Conta Google -->
+            <div class="auth-row">
+                <button class="auth-btn" id="connectBtn" onclick="handleConnectClick()">🔗 Conectar Google</button>
+                <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
             </div>
+            <!-- Linha 2: Ações principais -->
+            <div class="auth-row">
+                <button class="auth-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
+                <button class="auth-btn" id="desyncBtn" onclick="desyncNow()" disabled style="background:#ef4444;color:white;">🗑️ Dessincronizar</button>
+                <button class="action-btn load-btn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
+                <button class="reset-btn" onclick="clearSchedule()">🗑️ Limpar Tudo</button>
+            </div>
+            <!-- Linha 3: Duração (mais discreta) -->
+            <div class="auth-row" style="gap:6px; justify-content:center; margin-top:4px;">
+                <div class="duration-control">
+                    <span>⏱️ Duração:</span>
+                    <input type="number" id="durationInput" min="1" max="1440" value="60">
+                    <span>min</span>
+                </div>
+            </div>
+            <div class="user-info" id="userInfo"></div>
+            <div class="month-info" id="monthInfo"></div>
         </div>
-        <div class="user-info" id="userInfo"></div>
-        <div class="month-info" id="monthInfo"></div>
 
-        <!-- ===== BARRA DE PROGRESSO COM GIF ===== -->
+        <!-- BARRA DE PROGRESSO COM GIF ONLINE -->
         <div class="progress-container" id="progressContainer">
             <div class="progress-gif">
-                <img id="progressGif" src="pato.gif" alt="Pato andando" onerror="this.style.display='none'">
+                <img id="progressGif" src="https://media.tenor.com/8jN9Y7YgJ5wAAAAC/duck-walk.gif" alt="Pato andando" onerror="this.style.display='none'">
             </div>
             <div class="progress-content">
                 <div class="progress-message" id="progressMessage">⏳ Sincronização em andamento. Aguarde...</div>
@@ -399,10 +336,10 @@
     let isAuthenticated = false;
     let tokenClient;
     let isSyncing = false;
-    let eventDurationMinutes = 60; // padrão
+    let eventDurationMinutes = 60;
 
     // ===================================================================
-    // DURAÇÃO (carregar/salvar)
+    // DURAÇÃO
     // ===================================================================
     function loadDuration() {
         const saved = localStorage.getItem(DURATION_KEY);
@@ -421,7 +358,6 @@
         eventDurationMinutes = val;
         localStorage.setItem(DURATION_KEY, String(val));
     }
-    // atualiza quando o usuário mudar o campo
     document.addEventListener('change', function(e) {
         if (e.target && e.target.id === 'durationInput') {
             saveDuration();
@@ -429,7 +365,7 @@
     });
 
     // ===================================================================
-    // MODELO DE ROTINA (DEFAULT)
+    // MODELO DE ROTINA
     // ===================================================================
     const DEFAULT_ROUTINE = {
         segunda: [
@@ -536,54 +472,35 @@
     };
 
     // ===================================================================
-    // BARRA DE PROGRESSO COM GIF
+    // BARRA DE PROGRESSO
     // ===================================================================
     function showProgress(message) {
-        const container = document.getElementById('progressContainer');
-        const msgEl = document.getElementById('progressMessage');
-        msgEl.textContent = message || '⏳ Sincronização em andamento. Aguarde...';
-        container.classList.add('active');
+        document.getElementById('progressContainer').classList.add('active');
+        document.getElementById('progressMessage').textContent = message || '⏳ Sincronização em andamento. Aguarde...';
     }
-
     function updateProgress(current, total) {
-        const fill = document.getElementById('progressFill');
-        const percent = document.getElementById('progressPercent');
         const pct = Math.min(100, Math.round((current / total) * 100));
-        fill.style.width = pct + '%';
-        percent.textContent = pct + '%';
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressPercent').textContent = pct + '%';
     }
-
     function hideProgress() {
         document.getElementById('progressContainer').classList.remove('active');
         document.getElementById('progressFill').style.width = '0%';
         document.getElementById('progressPercent').textContent = '0%';
     }
 
-    // ===================================================================
-    // CONTROLE DE BOTÕES DURANTE SINCRONIZAÇÃO
-    // ===================================================================
     function setButtonsEnabled(enabled) {
         const syncBtn = document.getElementById('syncBtn');
         const desyncBtn = document.getElementById('desyncBtn');
-        if (enabled) {
-            syncBtn.disabled = !isAuthenticated;
-            desyncBtn.disabled = !isAuthenticated;
-        } else {
-            syncBtn.disabled = true;
-            desyncBtn.disabled = true;
-        }
+        syncBtn.disabled = !(enabled && isAuthenticated);
+        desyncBtn.disabled = !(enabled && isAuthenticated);
     }
 
     // ===================================================================
-    // DETECÇÃO DE EMOJI
+    // EMOJI E IMPORTANT BOX
     // ===================================================================
-    function containsEmoji(text) {
-        return /\p{Emoji}/u.test(text);
-    }
+    function containsEmoji(text) { return /\p{Emoji}/u.test(text); }
 
-    // ===================================================================
-    // BOX DE ATIVIDADES IMPORTANTES
-    // ===================================================================
     function updateImportantBox(day) {
         const listEl = document.getElementById(`important-list-${day}`);
         if (!listEl) return;
@@ -595,11 +512,8 @@
             if (index === 0) return;
             const timeCell = row.querySelector('.time');
             const activityCell = row.querySelector('.activity-cell');
-            if (timeCell && activityCell) {
-                const activity = activityCell.dataset.activity;
-                if (containsEmoji(activity)) {
-                    importantItems.push({ time: timeCell.dataset.time, activity });
-                }
+            if (timeCell && activityCell && containsEmoji(activityCell.dataset.activity)) {
+                importantItems.push({ time: timeCell.dataset.time, activity: activityCell.dataset.activity });
             }
         });
         listEl.innerHTML = '';
@@ -607,16 +521,15 @@
             listEl.innerHTML = `<li class="important-empty">✨ Nenhuma atividade com emoji neste dia.</li>`;
             return;
         }
-        importantItems.sort((a, b) => a.time.localeCompare(b.time));
+        importantItems.sort((a,b) => a.time.localeCompare(b.time));
         importantItems.forEach(item => {
-            const li = document.createElement('li');
             const emojiMatch = item.activity.match(/\p{Emoji}/u);
             const emoji = emojiMatch ? emojiMatch[0] : '⭐';
+            const li = document.createElement('li');
             li.innerHTML = `<span class="imp-time">${item.time}</span><span class="imp-emoji">${emoji}</span><span>${item.activity}</span>`;
             listEl.appendChild(li);
         });
     }
-
     function updateAllImportantBoxes() {
         ['segunda','terca','quarta','quinta','sexta','sabado','domingo'].forEach(updateImportantBox);
     }
@@ -667,9 +580,7 @@
                     timeCell.className = 'time';
                     timeCell.dataset.time = item.time;
                     timeCell.textContent = item.time;
-                    timeCell.addEventListener('click', () => {
-                        editTime(day, timeCell, item.time);
-                    });
+                    timeCell.addEventListener('click', () => { editTime(day, timeCell, item.time); });
                     const activityCell = document.createElement('td');
                     activityCell.className = 'activity-cell';
                     activityCell.dataset.activity = item.activity;
@@ -681,10 +592,7 @@
             });
             if (hasData) updateAllImportantBoxes();
             return hasData;
-        } catch (e) {
-            console.error('Erro ao carregar dados salvos:', e);
-            return false;
-        }
+        } catch (e) { return false; }
     }
 
     function clearSchedule() {
@@ -704,10 +612,7 @@
     }
 
     function loadRoutineModel() {
-        if (isSyncing) {
-            alert('⚠️ Aguarde a conclusão da sincronização atual.');
-            return;
-        }
+        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização atual.'); return; }
         if (!confirm('⚠️ Isso vai substituir todas as atividades atuais pelo modelo padrão. Deseja continuar?')) return;
         const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
         days.forEach(day => {
@@ -722,9 +627,7 @@
                 timeCell.className = 'time';
                 timeCell.dataset.time = item.time;
                 timeCell.textContent = item.time;
-                timeCell.addEventListener('click', () => {
-                    editTime(day, timeCell, item.time);
-                });
+                timeCell.addEventListener('click', () => { editTime(day, timeCell, item.time); });
                 const activityCell = document.createElement('td');
                 activityCell.className = 'activity-cell';
                 activityCell.dataset.activity = item.activity;
@@ -747,35 +650,25 @@
         const day = cell.closest('table').id.replace('-table','');
         const time = cell.closest('tr').querySelector('.time').dataset.time;
         const activity = cell.dataset.activity;
-
         cell.innerHTML = '';
         const indicator = document.createElement('span');
         indicator.className = 'sync-indicator synced';
         cell.appendChild(indicator);
-
         const textSpan = document.createElement('span');
         textSpan.className = 'activity-text';
         textSpan.textContent = activity;
         cell.appendChild(textSpan);
-
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-btn';
         editBtn.textContent = '✏️';
         editBtn.addEventListener('click', (e) => openEditModal(day, time, activity, e));
         cell.appendChild(editBtn);
-
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-btn';
         delBtn.textContent = '🗑️';
         delBtn.addEventListener('click', (e) => deleteActivity(day, cell, e));
         cell.appendChild(delBtn);
-
         updateImportantBox(day);
-    }
-
-    function renderAllActivityCells() {
-        document.querySelectorAll('.activity-cell').forEach(renderActivityCell);
-        updateAllImportantBoxes();
     }
 
     function attachTimeClickHandlers() {
@@ -799,24 +692,18 @@
     // EDIÇÃO
     // ===================================================================
     function saveNewActivity() {
-        if (isSyncing) {
-            alert('⚠️ Aguarde a conclusão da sincronização para adicionar atividades.');
-            return;
-        }
+        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para adicionar atividades.'); return; }
         const name = document.getElementById('newActivityName').value.trim();
         const time = document.getElementById('newActivityTime').value;
         const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
-
         if (!name) { alert('Informe o nome da atividade.'); return; }
         if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido (HH:MM).'); return; }
         if (selectedDays.length === 0) { alert('Selecione pelo menos um dia.'); return; }
-
         selectedDays.forEach(day => {
             const table = document.getElementById(day+'-table');
             if (!table) return;
             let rows = Array.from(table.querySelectorAll('tr')).slice(1);
             let existingRow = rows.find(r => r.querySelector('.time').dataset.time === time);
-
             if (existingRow) {
                 let activityCell = existingRow.querySelector('.activity-cell');
                 activityCell.dataset.activity += `, ${name}`;
@@ -838,7 +725,6 @@
                 renderActivityCell(activityCell);
             }
         });
-
         closeAddModal();
         saveScheduleToStorage();
         updateSyncStatus('pending', '⏳ Alterações pendentes');
@@ -846,13 +732,9 @@
 
     function deleteActivity(day, cellElement, event) {
         event.stopPropagation();
-        if (isSyncing) {
-            alert('⚠️ Aguarde a conclusão da sincronização para deletar atividades.');
-            return;
-        }
+        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para deletar atividades.'); return; }
         if (confirm('Tem certeza que deseja deletar esta atividade?')) {
-            const row = cellElement.closest('tr');
-            row.remove();
+            cellElement.closest('tr').remove();
             saveScheduleToStorage();
             updateSyncStatus('pending', '⏳ Alterações pendentes');
             updateImportantBox(day);
@@ -860,18 +742,13 @@
     }
 
     function saveContent() {
-        if (isSyncing) {
-            alert('⚠️ Aguarde a conclusão da sincronização para salvar alterações.');
-            return;
-        }
+        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para salvar alterações.'); return; }
         const modal = document.getElementById('noteModal');
         const textarea = document.getElementById('noteText');
         const day = modal.dataset.day;
         const time = modal.dataset.time;
         const newActivity = textarea.value.trim();
-
         if (!newActivity) { alert('A atividade não pode ficar vazia.'); return; }
-
         const table = document.getElementById(day+'-table');
         const rows = table.querySelectorAll('tr');
         for (let row of rows) {
@@ -889,18 +766,13 @@
     }
 
     function editTime(day, element, currentTime) {
-        if (isSyncing) {
-            alert('⚠️ Aguarde a conclusão da sincronização para editar horários.');
-            return;
-        }
+        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização para editar horários.'); return; }
         const newTime = prompt('Editar horário (HH:MM):', currentTime);
         if (!newTime || newTime === currentTime) return;
         if (!TIME_REGEX.test(newTime)) { alert('Horário inválido.'); return; }
-
         const table = element.closest('table');
         const conflict = Array.from(table.querySelectorAll('.time')).some(cell => cell !== element && cell.dataset.time === newTime);
         if (conflict) { alert('Já existe atividade nesse horário.'); return; }
-
         element.dataset.time = newTime;
         element.textContent = newTime;
         sortTableByTime(table);
@@ -924,14 +796,12 @@
         modal.classList.add('show');
         document.getElementById('noteText').focus();
     }
-
     function openAddModal() {
         document.getElementById('newActivityName').value = '';
         document.getElementById('newActivityTime').value = '';
         document.querySelectorAll('input[name="newDay"]').forEach(cb => cb.checked = false);
         document.getElementById('addModal').classList.add('show');
     }
-
     function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
     function closeModal() { document.getElementById('noteModal').classList.remove('show'); }
 
@@ -1033,7 +903,7 @@
     }
 
     // ===================================================================
-    // SINCRONIZAÇÃO (COM BARRA DE PROGRESSO E BLOQUEIO)
+    // SINCRONIZAÇÃO
     // ===================================================================
     function generateValidEventId(date, time) {
         const year = date.getFullYear();
@@ -1067,7 +937,6 @@
         const start = new Date(date);
         start.setHours(parseInt(hour), parseInt(minute), 0, 0);
         const end = new Date(date);
-        // Usa a duração configurada (em minutos)
         const duration = eventDurationMinutes || 60;
         end.setHours(parseInt(hour), parseInt(minute) + duration, 0, 0);
         return {
@@ -1079,19 +948,13 @@
     }
 
     async function syncWithGoogleCalendar() {
-        if (isSyncing) {
-            alert('⚠️ Uma sincronização já está em andamento. Aguarde.');
-            return;
-        }
-
+        if (isSyncing) { alert('⚠️ Uma sincronização já está em andamento. Aguarde.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
-
         isSyncing = true;
         setButtonsEnabled(false);
         showProgress('⏳ Sincronização em andamento. Aguarde...');
         updateSyncStatus('syncing', '🔄 Sincronizando...');
-
         try {
             const activities = getAllActivitiesFromSchedule();
             const today = new Date();
@@ -1099,21 +962,16 @@
             const month = today.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const startDay = today.getDate();
-
             const totalDays = daysInMonth - startDay + 1;
-            let processedDays = 0;
-            let successCount = 0, errorCount = 0, authFailed = false;
+            let processedDays = 0, successCount = 0, errorCount = 0, authFailed = false;
             const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-
             for (let d = startDay; d <= daysInMonth && !authFailed; d++) {
                 const date = new Date(year, month, d);
                 const dayName = dayNames[date.getDay()];
                 const dayActivities = activities.filter(a => a.day === dayName);
-
                 for (let activity of dayActivities) {
                     const event = createCalendarEvent(activity, date);
                     const eventId = generateValidEventId(date, activity.time);
-
                     try {
                         const updateRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
                             method: 'PUT',
@@ -1137,19 +995,10 @@
                         }
                     } catch (err) { errorCount++; }
                 }
-
                 processedDays++;
                 updateProgress(processedDays, totalDays);
             }
-
-            if (authFailed) {
-                forceReauth();
-                hideProgress();
-                isSyncing = false;
-                setButtonsEnabled(true);
-                return;
-            }
-
+            if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
             const startDateStr = today.toLocaleDateString('pt-BR');
             const endDateStr = new Date(year, month, daysInMonth).toLocaleDateString('pt-BR');
             updateSyncStatus('synced', `✅ ${successCount} eventos sincronizados (${startDateStr} a ${endDateStr})`);
@@ -1164,20 +1013,14 @@
     }
 
     async function desyncNow() {
-        if (isSyncing) {
-            alert('⚠️ Aguarde a conclusão da sincronização atual.');
-            return;
-        }
-
+        if (isSyncing) { alert('⚠️ Aguarde a conclusão da sincronização atual.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
-        if (!confirm(`⚠️ Deseja deletar todos os eventos a partir de hoje do Google Calendar?`)) return;
-
+        if (!confirm('⚠️ Deseja deletar todos os eventos a partir de hoje do Google Calendar?')) return;
         isSyncing = true;
         setButtonsEnabled(false);
         showProgress('⏳ Dessincronização em andamento. Aguarde...');
         updateSyncStatus('syncing', '🔄 Dessincronizando...');
-
         try {
             const activities = getAllActivitiesFromSchedule();
             const today = new Date();
@@ -1186,10 +1029,8 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const startDay = today.getDate();
             const totalDays = daysInMonth - startDay + 1;
-            let processedDays = 0;
-            let deletedCount = 0, authFailed = false;
+            let processedDays = 0, deletedCount = 0, authFailed = false;
             const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-
             for (let d = startDay; d <= daysInMonth && !authFailed; d++) {
                 const date = new Date(year, month, d);
                 const dayName = dayNames[date.getDay()];
@@ -1208,15 +1049,7 @@
                 processedDays++;
                 updateProgress(processedDays, totalDays);
             }
-
-            if (authFailed) {
-                forceReauth();
-                hideProgress();
-                isSyncing = false;
-                setButtonsEnabled(true);
-                return;
-            }
-
+            if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
             updateSyncStatus('synced', `✅ ${deletedCount} eventos removidos`);
             alert(`✅ Dessincronização concluída!\n\n${deletedCount} eventos foram removidos do Google Calendar.`);
             setTimeout(() => updateSyncStatus('synced', '✅ Pronto para sincronizar'), 3000);
@@ -1234,10 +1067,6 @@
         else forceReauth();
     }
 
-    function getMonthName() {
-        return new Date().toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
-    }
-
     // ===================================================================
     // TABS
     // ===================================================================
@@ -1253,16 +1082,11 @@
     // INICIALIZAÇÃO
     // ===================================================================
     window.addEventListener('load', function() {
-        loadDuration(); // carrega duração salva
+        loadDuration();
         const hasSaved = loadScheduleFromStorage();
-        if (!hasSaved) {
-            // Opcional: carregar modelo automaticamente na primeira vez
-            // loadRoutineModel();
-        }
         attachTimeClickHandlers();
         initializeGoogleAuth();
         updateMonthInfo();
-
         const activeTab = document.querySelector('.tab-content.active');
         if (activeTab) updateImportantBox(activeTab.id);
     });
