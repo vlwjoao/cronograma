@@ -249,6 +249,16 @@
             border-radius: 12px;
             white-space: nowrap;
         }
+        .activity-reminder-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
         .edit-btn, .delete-btn { 
             background: none; 
             border: none; 
@@ -674,7 +684,7 @@
             <p>💡 Carregue um modelo de rotina ou crie suas atividades.</p>
             <p style="font-size:12px;">📋 <strong>"Carregar Modelo"</strong> preenche com rotina padrão.</p>
             <p style="font-size:12px;">⭐ Atividades com <strong>emoji</strong> aparecem em destaque.</p>
-            <p style="font-size:12px;">⏱️ Cada atividade tem duração personalizável.</p>
+            <p style="font-size:12px;">⏱️ Cada atividade tem duração e lembrete personalizáveis.</p>
         </div>
 
         <!-- BARRA DE UTILITÁRIOS -->
@@ -802,6 +812,8 @@
             </div>
             <label>⏱️ Duração (minutos):</label>
             <input type="number" id="editDuration" min="1" max="1440" value="60">
+            <label>🔔 Lembrete (minutos antes):</label>
+            <input type="number" id="editReminder" min="0" max="1440" value="10">
         </div>
         <div class="modal-footer">
             <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
@@ -826,6 +838,8 @@
             <input type="time" id="newActivityTime">
             <label>⏱️ Duração (minutos):</label>
             <input type="number" id="newActivityDuration" min="1" max="1440" value="60">
+            <label>🔔 Lembrete (minutos antes):</label>
+            <input type="number" id="newActivityReminder" min="0" max="1440" value="10">
             <label>Dias da Semana:</label>
             <div class="days-checkbox-group">
                 <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="segunda"> Seg</label>
@@ -857,7 +871,7 @@
     let isAuthenticated = false;
     let tokenClient;
     let isSyncing = false;
-    let globalSyncStatus = 'disconnected'; // 'synced' | 'pending' | 'disconnected' | 'error' | 'syncing'
+    let globalSyncStatus = 'disconnected';
 
     // ===================================================================
     // CONTROLE DE STATUS INDIVIDUAL E GLOBAL
@@ -929,6 +943,7 @@
                         time: timeCell.dataset.time,
                         activity: cell.dataset.activity,
                         duration: parseInt(cell.dataset.duration) || 60,
+                        reminder: parseInt(cell.dataset.reminder) || 10,
                         cell: cell
                     });
                 }
@@ -942,7 +957,6 @@
         const totalActivities = document.querySelectorAll('.activity-cell').length;
         const el = document.getElementById('syncStatus');
         if (totalActivities === 0) {
-            // Nenhuma atividade cadastrada
             setGlobalSyncStatus('disconnected', '📭 Nenhuma atividade');
             return;
         }
@@ -965,8 +979,6 @@
         };
         el.className = 'sync-status ' + status;
         el.textContent = text || texts[status] || '🔴 Desconectado';
-        // Atualiza também as bolinhas individuais para refletir o status global (fallback)
-        // Mas já mantemos individual via data-sync-status
     }
 
     function loadGlobalStatusFromStorage() {
@@ -977,10 +989,6 @@
             globalSyncStatus = 'disconnected';
         }
         updateGlobalStatus();
-    }
-
-    function saveGlobalStatusToStorage() {
-        localStorage.setItem(SYNC_STATUS_KEY, globalSyncStatus);
     }
 
     // ===================================================================
@@ -1228,109 +1236,109 @@
     });
 
     // ===================================================================
-    // MODELO DE ROTINA (mesmo de antes)
+    // MODELO DE ROTINA (com lembrete padrão 10min)
     // ===================================================================
     const DEFAULT_ROUTINE = {
         segunda: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "09:40", activity: "🧺 Colocar roupas na máquina (Tarefa do dia)", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "18:45", activity: "🧺 Transferir roupas + pendurar", duration: 30 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10 },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, reminder: 10 },
+            { time: "09:30", activity: "Café da manhã", duration: 30, reminder: 10 },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina (Tarefa do dia)", duration: 20, reminder: 10 },
+            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120, reminder: 10 },
+            { time: "12:15", activity: "Almoço", duration: 60, reminder: 10 },
+            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30, reminder: 10 },
+            { time: "16:00", activity: "Exercício físico", duration: 60, reminder: 10 },
+            { time: "17:00", activity: "Estudos", duration: 90, reminder: 10 },
+            { time: "18:45", activity: "🧺 Transferir roupas + pendurar", duration: 30, reminder: 10 },
+            { time: "19:00", activity: "Jantar", duration: 60, reminder: 10 },
+            { time: "20:00", activity: "Leitura", duration: 30, reminder: 10 },
+            { time: "20:30", activity: "Lazer", duration: 60, reminder: 10 },
+            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30, reminder: 10 }
         ],
         terca: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "09:40", activity: "🧼 Colocar toalhas e tapetinhos na máquina (Tarefa do dia)", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "18:45", activity: "🧼 Pendurar toalhas e tapetinhos", duration: 30 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10 },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, reminder: 10 },
+            { time: "09:30", activity: "Café da manhã", duration: 30, reminder: 10 },
+            { time: "09:40", activity: "🧼 Colocar toalhas e tapetinhos na máquina (Tarefa do dia)", duration: 20, reminder: 10 },
+            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120, reminder: 10 },
+            { time: "12:15", activity: "Almoço", duration: 60, reminder: 10 },
+            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30, reminder: 10 },
+            { time: "16:00", activity: "Exercício físico", duration: 60, reminder: 10 },
+            { time: "17:00", activity: "Estudos", duration: 90, reminder: 10 },
+            { time: "18:45", activity: "🧼 Pendurar toalhas e tapetinhos", duration: 30, reminder: 10 },
+            { time: "19:00", activity: "Jantar", duration: 60, reminder: 10 },
+            { time: "20:00", activity: "Leitura", duration: 30, reminder: 10 },
+            { time: "20:30", activity: "Lazer", duration: 60, reminder: 10 },
+            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30, reminder: 10 }
         ],
         quarta: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
-            { time: "15:00", activity: "🧹 Limpeza completa do piso (cozinha + área de serviço)", duration: 60 },
-            { time: "16:00", activity: "🐱 Troca completa da areia dos gatos", duration: 45 },
-            { time: "16:45", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10 },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, reminder: 10 },
+            { time: "09:30", activity: "Café da manhã", duration: 30, reminder: 10 },
+            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120, reminder: 10 },
+            { time: "12:15", activity: "Almoço", duration: 60, reminder: 10 },
+            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30, reminder: 10 },
+            { time: "15:00", activity: "🧹 Limpeza completa do piso (cozinha + área de serviço)", duration: 60, reminder: 10 },
+            { time: "16:00", activity: "🐱 Troca completa da areia dos gatos", duration: 45, reminder: 10 },
+            { time: "16:45", activity: "Exercício físico", duration: 60, reminder: 10 },
+            { time: "17:00", activity: "Estudos", duration: 90, reminder: 10 },
+            { time: "19:00", activity: "Jantar", duration: 60, reminder: 10 },
+            { time: "20:00", activity: "Leitura", duration: 30, reminder: 10 },
+            { time: "20:30", activity: "Lazer", duration: 60, reminder: 10 },
+            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30, reminder: 10 }
         ],
         quinta: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "09:40", activity: "🧺 Colocar roupas na máquina (Tarefa do dia)", duration: 20 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "18:45", activity: "🧺 Transferir roupas + pendurar", duration: 30 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10 },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, reminder: 10 },
+            { time: "09:30", activity: "Café da manhã", duration: 30, reminder: 10 },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina (Tarefa do dia)", duration: 20, reminder: 10 },
+            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120, reminder: 10 },
+            { time: "12:15", activity: "Almoço", duration: 60, reminder: 10 },
+            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30, reminder: 10 },
+            { time: "16:00", activity: "Exercício físico", duration: 60, reminder: 10 },
+            { time: "17:00", activity: "Estudos", duration: 90, reminder: 10 },
+            { time: "18:45", activity: "🧺 Transferir roupas + pendurar", duration: 30, reminder: 10 },
+            { time: "19:00", activity: "Jantar", duration: 60, reminder: 10 },
+            { time: "20:00", activity: "Leitura", duration: 30, reminder: 10 },
+            { time: "20:30", activity: "Lazer", duration: 60, reminder: 10 },
+            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30, reminder: 10 }
         ],
         sexta: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30 },
-            { time: "15:00", activity: "🛏️ Organização do quarto", duration: 45 },
-            { time: "16:00", activity: "🌿 Limpeza da varanda", duration: 45 },
-            { time: "16:45", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10 },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, reminder: 10 },
+            { time: "09:30", activity: "Café da manhã", duration: 30, reminder: 10 },
+            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120, reminder: 10 },
+            { time: "12:15", activity: "Almoço", duration: 60, reminder: 10 },
+            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30, reminder: 10 },
+            { time: "15:00", activity: "🛏️ Organização do quarto", duration: 45, reminder: 10 },
+            { time: "16:00", activity: "🌿 Limpeza da varanda", duration: 45, reminder: 10 },
+            { time: "16:45", activity: "Exercício físico", duration: 60, reminder: 10 },
+            { time: "17:00", activity: "Estudos", duration: 90, reminder: 10 },
+            { time: "19:00", activity: "Jantar", duration: 60, reminder: 10 },
+            { time: "20:00", activity: "Leitura", duration: 30, reminder: 10 },
+            { time: "20:30", activity: "Lazer", duration: 60, reminder: 10 },
+            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30, reminder: 10 }
         ],
         sabado: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30 },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60 },
-            { time: "09:30", activity: "Café da manhã", duration: 30 },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120 },
-            { time: "12:15", activity: "Almoço", duration: 60 },
-            { time: "13:00", activity: "🚿 Faxina pesada do banheiro", duration: 90 },
-            { time: "14:30", activity: "🐱 Limpeza do quartinho dos gatos", duration: 45 },
-            { time: "15:15", activity: "🧺 Lavar roupa de cama e tapete do quarto (quinzenal)", duration: 30 },
-            { time: "16:00", activity: "Exercício físico", duration: 60 },
-            { time: "17:00", activity: "Estudos", duration: 90 },
-            { time: "19:00", activity: "Jantar", duration: 60 },
-            { time: "20:00", activity: "Leitura", duration: 30 },
-            { time: "20:30", activity: "Lazer", duration: 60 },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30 }
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10 },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, reminder: 10 },
+            { time: "09:30", activity: "Café da manhã", duration: 30, reminder: 10 },
+            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120, reminder: 10 },
+            { time: "12:15", activity: "Almoço", duration: 60, reminder: 10 },
+            { time: "13:00", activity: "🚿 Faxina pesada do banheiro", duration: 90, reminder: 10 },
+            { time: "14:30", activity: "🐱 Limpeza do quartinho dos gatos", duration: 45, reminder: 10 },
+            { time: "15:15", activity: "🧺 Lavar roupa de cama e tapete do quarto (quinzenal)", duration: 30, reminder: 10 },
+            { time: "16:00", activity: "Exercício físico", duration: 60, reminder: 10 },
+            { time: "17:00", activity: "Estudos", duration: 90, reminder: 10 },
+            { time: "19:00", activity: "Jantar", duration: 60, reminder: 10 },
+            { time: "20:00", activity: "Leitura", duration: 30, reminder: 10 },
+            { time: "20:30", activity: "Lazer", duration: 60, reminder: 10 },
+            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30, reminder: 10 }
         ],
         domingo: [
-            { time: "09:00", activity: "🍳 Preparo das refeições da semana (arroz, feijão, frango)", duration: 120 },
-            { time: "12:00", activity: "Congelamento das refeições", duration: 60 },
-            { time: "14:00", activity: "Resto do dia livre", duration: 0 }
+            { time: "09:00", activity: "🍳 Preparo das refeições da semana (arroz, feijão, frango)", duration: 120, reminder: 10 },
+            { time: "12:00", activity: "Congelamento das refeições", duration: 60, reminder: 10 },
+            { time: "14:00", activity: "Resto do dia livre", duration: 0, reminder: 0 }
         ]
     };
 
@@ -1413,10 +1421,12 @@
                 const activityCell = row.querySelector('.activity-cell');
                 if (timeCell && activityCell) {
                     const duration = parseInt(activityCell.dataset.duration) || 60;
+                    const reminder = parseInt(activityCell.dataset.reminder) || 10;
                     activities.push({ 
                         time: timeCell.dataset.time, 
                         activity: activityCell.dataset.activity,
                         duration: duration,
+                        reminder: reminder,
                         syncStatus: activityCell.dataset.syncStatus || 'pending'
                     });
                 }
@@ -1444,6 +1454,7 @@
                 table.appendChild(header);
                 schedule[day].forEach(item => {
                     const duration = item.duration || 60;
+                    const reminder = item.reminder || 10;
                     const syncStatus = item.syncStatus || 'pending';
                     const row = document.createElement('tr');
                     const timeCell = document.createElement('td');
@@ -1455,6 +1466,7 @@
                     activityCell.className = 'activity-cell';
                     activityCell.dataset.activity = item.activity;
                     activityCell.dataset.duration = duration;
+                    activityCell.dataset.reminder = reminder;
                     activityCell.dataset.syncStatus = syncStatus;
                     row.appendChild(timeCell);
                     row.appendChild(activityCell);
@@ -1496,6 +1508,7 @@
             table.appendChild(header);
             (DEFAULT_ROUTINE[day] || []).forEach(item => {
                 const duration = item.duration || 60;
+                const reminder = item.reminder || 10;
                 const row = document.createElement('tr');
                 const timeCell = document.createElement('td');
                 timeCell.className = 'time';
@@ -1506,7 +1519,8 @@
                 activityCell.className = 'activity-cell';
                 activityCell.dataset.activity = item.activity;
                 activityCell.dataset.duration = duration;
-                activityCell.dataset.syncStatus = 'pending'; // modelo novo sempre pendente
+                activityCell.dataset.reminder = reminder;
+                activityCell.dataset.syncStatus = 'pending';
                 row.appendChild(timeCell);
                 row.appendChild(activityCell);
                 table.appendChild(row);
@@ -1520,13 +1534,14 @@
     }
 
     // ===================================================================
-    // RENDERIZAÇÃO (COM BOLINHA)
+    // RENDERIZAÇÃO (COM BOLINHA E BADGES)
     // ===================================================================
     function renderActivityCell(cell) {
         const day = cell.closest('table').id.replace('-table','');
         const time = cell.closest('tr').querySelector('.time').dataset.time;
         const activity = cell.dataset.activity;
         const duration = parseInt(cell.dataset.duration) || 60;
+        const reminder = parseInt(cell.dataset.reminder) || 10;
         const syncStatus = cell.dataset.syncStatus || 'pending';
 
         cell.innerHTML = '';
@@ -1540,15 +1555,22 @@
         textSpan.textContent = activity;
         cell.appendChild(textSpan);
         
-        const badge = document.createElement('span');
-        badge.className = 'activity-duration-badge';
-        badge.textContent = duration + 'min';
-        cell.appendChild(badge);
+        const durationBadge = document.createElement('span');
+        durationBadge.className = 'activity-duration-badge';
+        durationBadge.textContent = duration + 'min';
+        cell.appendChild(durationBadge);
+        
+        if (reminder > 0) {
+            const reminderBadge = document.createElement('span');
+            reminderBadge.className = 'activity-reminder-badge';
+            reminderBadge.textContent = '🔔' + reminder + 'min';
+            cell.appendChild(reminderBadge);
+        }
         
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-btn';
         editBtn.textContent = '✏️';
-        editBtn.addEventListener('click', (e) => openEditModal(day, time, activity, duration, e));
+        editBtn.addEventListener('click', (e) => openEditModal(day, time, activity, duration, reminder, e));
         cell.appendChild(editBtn);
         
         const delBtn = document.createElement('button');
@@ -1585,11 +1607,13 @@
         const name = document.getElementById('newActivityName').value.trim();
         const time = document.getElementById('newActivityTime').value;
         const duration = parseInt(document.getElementById('newActivityDuration').value) || 60;
+        const reminder = parseInt(document.getElementById('newActivityReminder').value) || 10;
         const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
         
         if (!name) { alert('Informe o nome da atividade.'); return; }
         if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido.'); return; }
         if (duration < 1) { alert('Duração mínima: 1 minuto.'); return; }
+        if (reminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
         if (selectedDays.length === 0) { alert('Selecione pelo menos um dia.'); return; }
         
         selectedDays.forEach(day => {
@@ -1613,6 +1637,7 @@
                 activityCell.className = 'activity-cell';
                 activityCell.dataset.activity = name;
                 activityCell.dataset.duration = duration;
+                activityCell.dataset.reminder = reminder;
                 activityCell.dataset.syncStatus = 'pending';
                 newRow.appendChild(timeCell);
                 newRow.appendChild(activityCell);
@@ -1642,13 +1667,16 @@
         const modal = document.getElementById('noteModal');
         const activityInput = document.getElementById('editActivityName');
         const durationInput = document.getElementById('editDuration');
+        const reminderInput = document.getElementById('editReminder');
         const day = modal.dataset.day;
         const time = modal.dataset.time;
         const newActivity = activityInput.value.trim();
         const newDuration = parseInt(durationInput.value) || 60;
+        const newReminder = parseInt(reminderInput.value) || 10;
         
         if (!newActivity) { alert('A atividade não pode ficar vazia.'); return; }
         if (newDuration < 1) { alert('Duração mínima: 1 minuto.'); return; }
+        if (newReminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
         
         const table = document.getElementById(day+'-table');
         const rows = table.querySelectorAll('tr');
@@ -1658,6 +1686,7 @@
             if (timeCell && timeCell.dataset.time === time && activityCell) {
                 activityCell.dataset.activity = newActivity;
                 activityCell.dataset.duration = newDuration;
+                activityCell.dataset.reminder = newReminder;
                 activityCell.dataset.syncStatus = 'pending';
                 renderActivityCell(activityCell);
                 break;
@@ -1678,7 +1707,6 @@
         if (conflict) { alert('Já existe atividade nesse horário.'); return; }
         element.dataset.time = newTime;
         element.textContent = newTime;
-        // Marcar a atividade como pendente (pois o horário mudou)
         const activityCell = element.closest('tr').querySelector('.activity-cell');
         if (activityCell) {
             activityCell.dataset.syncStatus = 'pending';
@@ -1696,11 +1724,12 @@
     // ===================================================================
     // MODAIS
     // ===================================================================
-    function openEditModal(day, time, activity, duration, event) {
+    function openEditModal(day, time, activity, duration, reminder, event) {
         event.stopPropagation();
         const modal = document.getElementById('noteModal');
         document.getElementById('editActivityName').value = activity;
         document.getElementById('editDuration').value = duration || 60;
+        document.getElementById('editReminder').value = reminder || 10;
         document.getElementById('modalActivityTitle').textContent = 'Editar Atividade';
         document.getElementById('modalActivityTime').textContent = time;
         document.getElementById('noteLabel').textContent = '✏️ Edite a atividade:';
@@ -1714,6 +1743,7 @@
         document.getElementById('newActivityName').value = '';
         document.getElementById('newActivityTime').value = '';
         document.getElementById('newActivityDuration').value = 60;
+        document.getElementById('newActivityReminder').value = 10;
         document.querySelectorAll('input[name="newDay"]').forEach(cb => cb.checked = false);
         document.getElementById('addModal').classList.add('show');
         setTimeout(() => document.getElementById('newActivityName').focus(), 100);
@@ -1781,7 +1811,6 @@
             document.getElementById('syncBtn').disabled = false;
             document.getElementById('desyncBtn').disabled = false;
             document.getElementById('userInfo').textContent = '✅ Conectado com Google';
-            // Verifica se há pendências
             updateGlobalStatus();
         } else {
             document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
@@ -1837,11 +1866,13 @@
                 const activityCell = row.querySelector('.activity-cell');
                 if (timeCell && activityCell) {
                     const duration = parseInt(activityCell.dataset.duration) || 60;
+                    const reminder = parseInt(activityCell.dataset.reminder) || 10;
                     activities.push({ 
                         day, 
                         time: timeCell.dataset.time, 
                         activity: activityCell.dataset.activity,
                         duration: duration,
+                        reminder: reminder,
                         syncStatus: activityCell.dataset.syncStatus || 'pending',
                         cell: activityCell
                     });
@@ -1858,12 +1889,26 @@
         const end = new Date(date);
         const duration = activity.duration || 60;
         end.setHours(parseInt(hour), parseInt(minute) + duration, 0, 0);
-        return {
+        const reminder = activity.reminder || 10;
+        const event = {
             summary: activity.activity,
             description: `Atividade do cronograma: ${activity.activity} (${duration}min)`,
             start: { dateTime: start.toISOString(), timeZone: 'America/Sao_Paulo' },
             end: { dateTime: end.toISOString(), timeZone: 'America/Sao_Paulo' }
         };
+        // Adicionar lembrete apenas se reminder > 0
+        if (reminder > 0) {
+            event.reminders = {
+                useDefault: false,
+                overrides: [
+                    { method: 'popup', minutes: reminder }
+                ]
+            };
+        } else {
+            // Se reminder for 0, não adiciona lembrete (ou pode usar o padrão do Google)
+            event.reminders = { useDefault: false, overrides: [] };
+        }
+        return event;
     }
 
     async function syncWithGoogleCalendar() {
@@ -1871,7 +1916,6 @@
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
 
-        // Buscar atividades pendentes
         const pending = getPendingActivities();
         if (pending.length === 0) {
             alert('✅ Nenhuma atividade pendente para sincronizar.');
@@ -1893,7 +1937,6 @@
             let successCount = 0, errorCount = 0, authFailed = false;
             const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 
-            // Agrupar pendentes por dia para progresso
             const pendingByDay = {};
             pending.forEach(p => {
                 if (!pendingByDay[p.day]) pendingByDay[p.day] = [];
@@ -1925,7 +1968,6 @@
                             if (insertRes.status === 401) { authFailed = true; break; }
                             if (insertRes.ok) {
                                 successCount++;
-                                // Marcar como sincronizado
                                 activity.cell.dataset.syncStatus = 'synced';
                                 const indicator = activity.cell.querySelector('.sync-indicator');
                                 if (indicator) indicator.className = 'sync-indicator synced';
@@ -1999,7 +2041,6 @@
                 updateProgress(processedDays, totalDays);
             }
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
-            // Marcar todas as atividades como pendentes (já que foram removidas)
             markAllActivitiesAsPending();
             saveScheduleToStorage();
             alert(`✅ ${deletedCount} eventos removidos.`);
