@@ -6,7 +6,7 @@
     <title>Cronograma Semanal + Google Calendar</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        /* ===== RESET E BASE ===== */
+        /* ===== RESET E BASE (mesmo CSS anterior, mantido) ===== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -31,7 +31,6 @@
         .header h1 { font-size: 22px; margin-bottom: 6px; }
         .header p { opacity: 0.9; font-size: 13px; margin-bottom: 12px; }
 
-        /* ===== SEÇÕES DE AUTH E SYNC ===== */
         .auth-section, .sync-section {
             display: flex;
             flex-wrap: wrap;
@@ -46,7 +45,7 @@
         .auth-section { background: rgba(0,0,0,0.08); margin-bottom: 6px; }
         .sync-section { background: rgba(0,0,0,0.05); }
 
-        .auth-btn, .action-btn, .reset-btn {
+        .auth-btn, .action-btn, .reset-btn, .nav-btn {
             padding: 12px 18px;
             border: none;
             border-radius: 8px;
@@ -74,6 +73,8 @@
         .load-btn:hover { background: #d97706; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .reset-btn { background: #ef4444; color: white; }
         .reset-btn:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .nav-btn { background: rgba(255,255,255,0.2); color: white; max-width: 180px; }
+        .nav-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-2px); }
 
         .sync-status {
             display: inline-block;
@@ -91,7 +92,6 @@
         .user-info { text-align: center; padding: 4px 0; color: white; font-size: 13px; }
         .month-info { text-align: center; padding: 4px 0; color: rgba(255,255,255,0.9); font-size: 12px; font-style: italic; }
 
-        /* ===== BARRA DE PROGRESSO COM GIF ===== */
         .progress-container {
             display: none;
             margin: 12px auto 8px auto;
@@ -123,7 +123,6 @@
         .progress-bar-fill { height: 100%; width: 0%; background: #10b981; border-radius: 4px; transition: width 0.3s ease; }
         .progress-percent { font-size: 12px; color: white; margin-top: 3px; font-weight: 600; }
 
-        /* ===== TABS ===== */
         .tabs { 
             display: flex; 
             background: #f5f5f5; 
@@ -155,30 +154,52 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ===== UTILITÁRIOS ACIMA DAS TABELAS ===== */
         .utility-bar {
             display: flex;
             flex-wrap: wrap;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
-            gap: 8px;
+            gap: 10px;
         }
         .utility-left {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
+            align-items: center;
+        }
+        .utility-center {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
             justify-content: center;
         }
         .utility-right {
             display: flex;
             gap: 8px;
+            align-items: center;
         }
         .utility-bar .action-btn,
-        .utility-bar .reset-btn {
-            padding: 10px 16px;
+        .utility-bar .reset-btn,
+        .utility-bar .nav-btn {
+            padding: 8px 14px;
             font-size: 13px;
             max-width: 200px;
+        }
+        .utility-bar .nav-btn {
+            background: #e0e7ff;
+            color: #4338ca;
+            max-width: 140px;
+        }
+        .utility-bar .nav-btn:hover {
+            background: #c7d2fe;
+        }
+        .week-label {
+            font-weight: 600;
+            color: #4338ca;
+            font-size: 14px;
+            white-space: nowrap;
         }
         .add-btn {
             width: 44px; height: 44px; font-size: 22px; border-radius: 50%;
@@ -189,7 +210,6 @@
         }
         .add-btn:hover { transform: scale(1.08) translateY(-2px); background: #059669; }
 
-        /* ===== TABELAS COM SCROLL HORIZONTAL ===== */
         .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -259,7 +279,6 @@
             border-radius: 12px;
             white-space: nowrap;
         }
-        /* === BADGE DE PERIODICIDADE === */
         .activity-period-badge {
             display: inline-block;
             font-size: 10px;
@@ -287,7 +306,6 @@
         .delete-btn:hover { opacity: 1; color: #dc2626; }
         tr:hover .edit-btn, tr:hover .delete-btn { opacity: 1; }
 
-        /* ===== INDICADOR DE SINCRONIZAÇÃO ===== */
         .sync-indicator {
             display: inline-block;
             width: 10px;
@@ -301,7 +319,6 @@
         .sync-indicator.error { background: #ef4444; }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
 
-        /* ===== IMPORTANT BOX ===== */
         .important-box { 
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
             border: 2px solid #f59e0b; 
@@ -336,7 +353,61 @@
         .important-list .imp-emoji { font-size: 18px; }
         .important-empty { color: #78350f; font-style: italic; padding: 6px 0; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
 
-        /* ===== MODAIS ===== */
+        .footer-settings {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            border: 1px solid #eee;
+        }
+        .footer-settings .reminder-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .footer-settings .reminder-control label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+        }
+        .footer-settings .reminder-control input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .footer-settings .reminder-control input[type="number"] {
+            width: 70px;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .footer-settings .reminder-control span {
+            font-size: 14px;
+            color: #555;
+        }
+        .footer-settings .disclaimer {
+            font-size: 13px;
+            color: #666;
+            background: #fef3c7;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .footer-settings .disclaimer strong {
+            color: #92400e;
+        }
+
         .modal { 
             display: none; 
             position: fixed; 
@@ -373,7 +444,6 @@
             font-size: 14px; 
             margin-top: 12px; 
         }
-        /* ===== CAMPO COM EMOJI PICKER ===== */
         .input-with-emoji {
             display: flex;
             align-items: center;
@@ -404,11 +474,8 @@
             flex-shrink: 0;
             line-height: 1;
         }
-        .emoji-trigger:hover {
-            background: #f0f0f0;
-        }
+        .emoji-trigger:hover { background: #f0f0f0; }
 
-        /* ===== EMOJI PICKER ===== */
         .emoji-picker {
             display: none;
             background: white;
@@ -498,7 +565,6 @@
         }
         .emoji-picker-overlay.active { display: block; }
 
-        /* ===== PERIODICIDADE (modais) ===== */
         .period-group {
             display: flex;
             flex-direction: column;
@@ -637,7 +703,6 @@
         .modal-btn.cancel { background: #f0f0f0; color: #333; }
         .modal-btn.cancel:hover { background: #e0e0e0; }
 
-        /* ===== LEGENDAS ===== */
         .color-legend { 
             background: #f9f9f9; 
             padding: 15px; 
@@ -653,7 +718,6 @@
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #555; }
         .legend-box { width: 16px; height: 16px; border-radius: 4px; }
 
-        /* ===== CONFIG MESSAGE ===== */
         .config-message { 
             background: #fef3c7; 
             border: 1px solid #fbbf24; 
@@ -666,13 +730,12 @@
         }
         .config-message p { margin: 4px 0; }
 
-        /* ===== MEDIA QUERIES ===== */
         @media (min-width: 600px) {
             .auth-section, .sync-section {
                 flex-direction: row;
                 flex-wrap: wrap;
             }
-            .auth-btn, .action-btn, .reset-btn {
+            .auth-btn, .action-btn, .reset-btn, .nav-btn {
                 width: auto;
                 max-width: none;
                 padding: 10px 20px;
@@ -697,12 +760,15 @@
             .emoji-grid {
                 grid-template-columns: repeat(10, 1fr);
             }
+            .footer-settings .reminder-control {
+                flex-wrap: nowrap;
+            }
         }
 
         @media (max-width: 400px) {
             .header h1 { font-size: 18px; }
             .header p { font-size: 12px; }
-            .auth-btn, .action-btn, .reset-btn { font-size: 13px; padding: 10px 14px; }
+            .auth-btn, .action-btn, .reset-btn, .nav-btn { font-size: 13px; padding: 10px 14px; }
             .tab-btn { font-size: 12px; padding: 10px 10px; min-width: 50px; }
             .activity-text { font-size: 12px; min-width: 80px; }
             td, th { padding: 8px 8px; }
@@ -717,6 +783,20 @@
             .emoji-item {
                 font-size: 20px;
             }
+            .utility-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .utility-left, .utility-center, .utility-right {
+                justify-content: center;
+            }
+            .utility-bar .nav-btn {
+                max-width: 120px;
+            }
+            .footer-settings .reminder-control {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
@@ -726,14 +806,12 @@
         <h1>📅 Cronograma Semanal</h1>
         <p>Sincronização automática com Google Calendar</p>
 
-        <!-- SEÇÃO 1: CONTA GOOGLE -->
         <div class="auth-section">
             <button class="auth-btn" id="connectBtn" onclick="handleConnectClick()">🔗 Conectar Google</button>
             <span class="sync-status disconnected" id="syncStatus">🔴 Desconectado</span>
             <div class="user-info" id="userInfo"></div>
         </div>
 
-        <!-- SEÇÃO 2: SINCRONIZAÇÃO -->
         <div class="sync-section">
             <button class="auth-btn sync-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
             <button class="auth-btn desync-btn" id="desyncBtn" onclick="desyncNow()" disabled>🗑️ Dessincronizar</button>
@@ -741,7 +819,6 @@
 
         <div class="month-info" id="monthInfo"></div>
 
-        <!-- BARRA DE PROGRESSO COM GIF -->
         <div class="progress-container" id="progressContainer">
             <div class="progress-gif">
                 <img id="progressGif" src="https://media1.tenor.com/m/XG8WXd4R7RYAAAAC/pato-caminando.gif" alt="Pato andando" onerror="this.style.display='none'">
@@ -761,21 +838,24 @@
             <p>💡 Carregue um modelo de rotina ou crie suas atividades.</p>
             <p style="font-size:12px;">📋 <strong>"Carregar Modelo"</strong> preenche com rotina padrão.</p>
             <p style="font-size:12px;">⭐ Atividades com <strong>emoji</strong> aparecem em destaque.</p>
-            <p style="font-size:12px;">⏱️ Cada atividade tem duração, lembrete e periodicidade personalizáveis.</p>
+            <p style="font-size:12px;">⏱️ Cada atividade tem duração e periodicidade personalizáveis.</p>
         </div>
 
-        <!-- BARRA DE UTILITÁRIOS -->
         <div class="utility-bar">
             <div class="utility-left">
                 <button class="action-btn load-btn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
                 <button class="reset-btn" onclick="clearSchedule()">🗑️ Limpar Tudo</button>
+            </div>
+            <div class="utility-center">
+                <button class="nav-btn" onclick="changeWeek(-1)">◀ Semana</button>
+                <span class="week-label" id="weekDisplay">Semana atual</span>
+                <button class="nav-btn" onclick="changeWeek(1)">Semana ▶</button>
             </div>
             <div class="utility-right">
                 <button class="add-btn" onclick="openAddModal()" title="Adicionar Nova Atividade">+</button>
             </div>
         </div>
 
-        <!-- ABAS -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('segunda', event)">Seg</button>
             <button class="tab-btn" onclick="switchTab('terca', event)">Ter</button>
@@ -786,7 +866,6 @@
             <button class="tab-btn" onclick="switchTab('domingo', event)">Dom</button>
         </div>
 
-        <!-- TABELAS -->
         <div id="segunda" class="tab-content active">
             <div class="table-wrapper">
                 <table id="segunda-table"><tr><th>Horário</th><th>Atividade</th></tr></table>
@@ -859,13 +938,28 @@
                 <div class="legend-item"><div class="legend-box" style="background:#ef4444;"></div><span>❌ Não sincronizado</span></div>
             </div>
         </div>
+
+        <div class="footer-settings">
+            <div class="reminder-control">
+                <label>
+                    <input type="checkbox" id="reminderEnabled" checked>
+                    🔔 Ativar lembretes
+                </label>
+                <input type="number" id="reminderMinutes" min="0" max="1440" value="10">
+                <span>minutos antes do evento</span>
+            </div>
+            <div class="disclaimer">
+                <strong>ℹ️ Sobre os lembretes:</strong>
+                Seus lembretes vão notificar antes do evento. Configure o lembrete apenas uma vez e ele valerá para todos os eventos. 
+                É possível reconfigurar os lembretes depois. Também é possível individualizar lembretes – todos serão fixados pelo usuário, 
+                mas o usuário pode clicar em uma tarefa específica e alterar o lembrete daquela tarefa específica (campo "Lembrete" no modal de edição).
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- EMOJI PICKER OVERLAY -->
 <div class="emoji-picker-overlay" id="emojiOverlay" onclick="closeEmojiPicker()"></div>
-
-<!-- EMOJI PICKER -->
 <div class="emoji-picker" id="emojiPicker">
     <div class="emoji-close">
         <button onclick="closeEmojiPicker()">✕</button>
@@ -889,12 +983,10 @@
             </div>
             <label>⏱️ Duração (minutos):</label>
             <input type="number" id="editDuration" min="1" max="1440" value="60">
-            <label>🔔 Lembrete (minutos antes):</label>
-            <input type="number" id="editReminder" min="0" max="1440" value="10">
             <label>📅 Periodicidade:</label>
-            <div id="editPeriodContainer" class="period-group">
-                <!-- será preenchido pelo JS -->
-            </div>
+            <div id="editPeriodContainer" class="period-group"></div>
+            <label>🔔 Lembrete individual (minutos antes - deixe vazio para usar o global):</label>
+            <input type="number" id="editReminder" min="0" max="1440" placeholder="ex: 15" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;">
         </div>
         <div class="modal-footer">
             <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
@@ -919,12 +1011,10 @@
             <input type="time" id="newActivityTime">
             <label>⏱️ Duração (minutos):</label>
             <input type="number" id="newActivityDuration" min="1" max="1440" value="60">
-            <label>🔔 Lembrete (minutos antes):</label>
-            <input type="number" id="newActivityReminder" min="0" max="1440" value="10">
             <label>📅 Periodicidade:</label>
-            <div id="addPeriodContainer" class="period-group">
-                <!-- será preenchido pelo JS -->
-            </div>
+            <div id="addPeriodContainer" class="period-group"></div>
+            <label>🔔 Lembrete individual (minutos antes - deixe vazio para usar o global):</label>
+            <input type="number" id="newActivityReminder" min="0" max="1440" placeholder="ex: 15" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;">
             <label>Dias da Semana:</label>
             <div class="days-checkbox-group">
                 <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="segunda"> Seg</label>
@@ -952,14 +1042,292 @@
     const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
     const STORAGE_KEY = 'weeklyScheduleData';
     const SYNC_STATUS_KEY = 'syncStatus';
+    const REMINDER_KEY = 'reminderSettings';
 
     let isAuthenticated = false;
     let tokenClient;
     let isSyncing = false;
     let globalSyncStatus = 'disconnected';
+    let currentWeekOffset = 0;
 
     // ===================================================================
-    // PERIODICIDADE (geração dos campos nos modais)
+    // LEMBRETE GLOBAL
+    // ===================================================================
+    function loadReminderSettings() {
+        const saved = localStorage.getItem(REMINDER_KEY);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                document.getElementById('reminderEnabled').checked = data.enabled !== false;
+                document.getElementById('reminderMinutes').value = data.minutes || 10;
+            } catch(e) { /* fallback */ }
+        }
+    }
+    function saveReminderSettings() {
+        const data = {
+            enabled: document.getElementById('reminderEnabled').checked,
+            minutes: parseInt(document.getElementById('reminderMinutes').value) || 10
+        };
+        localStorage.setItem(REMINDER_KEY, JSON.stringify(data));
+    }
+    function getReminderSettings() {
+        const enabled = document.getElementById('reminderEnabled').checked;
+        const minutes = parseInt(document.getElementById('reminderMinutes').value) || 10;
+        return { enabled, minutes };
+    }
+    document.addEventListener('change', function(e) {
+        if (e.target && (e.target.id === 'reminderEnabled' || e.target.id === 'reminderMinutes')) {
+            saveReminderSettings();
+        }
+    });
+
+    // ===================================================================
+    // NAVEGAÇÃO ENTRE SEMANAS
+    // ===================================================================
+    function changeWeek(delta) {
+        currentWeekOffset += delta;
+        updateWeekDisplay();
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) {
+            const day = activeTab.id;
+            filterActivitiesByDate(day);
+            updateImportantBox(day);
+        }
+    }
+    function updateWeekDisplay() {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+        startOfWeek.setDate(startOfWeek.getDate() + currentWeekOffset * 7);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        const format = (d) => d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
+        document.getElementById('weekDisplay').textContent = `${format(startOfWeek)} - ${format(endOfWeek)}`;
+        document.getElementById('monthInfo').textContent = `📆 Semana de ${format(startOfWeek)} a ${format(endOfWeek)}`;
+    }
+
+    // ===================================================================
+    // FUNÇÕES DE DATA PARA PERIODICIDADE
+    // ===================================================================
+    function getWeekOfMonth(date) {
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+        const dayOfMonth = date.getDate();
+        return Math.ceil((dayOfMonth + firstDay) / 7);
+    }
+    function getOccurrenceOfWeekDay(date) {
+        return Math.ceil(date.getDate() / 7);
+    }
+    function activityOccursToday(activity, date) {
+        const period = activity.period || 'semanal';
+        if (period === 'semanal') return true;
+        const dayOfMonth = date.getDate();
+        const month = date.getMonth();
+        const year = date.getFullYear();
+        const weekOfMonth = getWeekOfMonth(date);
+        const dayOfWeek = date.getDay();
+        if (period === 'quinzenal') {
+            const weeks = activity.semanas || [1,3];
+            return weeks.includes(weekOfMonth);
+        }
+        if (period === 'mensal') {
+            const tipo = activity.mensalTipo || 'dia';
+            if (tipo === 'dia') {
+                let dia = activity.diaMes || 1;
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                if (dia > lastDay) dia = lastDay;
+                return dayOfMonth === dia;
+            } else {
+                const ocorrencia = activity.ocorrencia || 1;
+                const diaSemana = activity.diaSemana || 0;
+                return getOccurrenceOfWeekDay(date) === ocorrencia && dayOfWeek === diaSemana;
+            }
+        }
+        return true;
+    }
+
+    // ===================================================================
+    // CONTROLE DE STATUS
+    // ===================================================================
+    function getActivityCell(day, time) {
+        const table = document.getElementById(day + '-table');
+        if (!table) return null;
+        const rows = table.querySelectorAll('tr');
+        for (let row of rows) {
+            const timeCell = row.querySelector('.time');
+            if (timeCell && timeCell.dataset.time === time) {
+                return row.querySelector('.activity-cell');
+            }
+        }
+        return null;
+    }
+    function setActivityStatus(day, time, status) {
+        const cell = getActivityCell(day, time);
+        if (!cell) return;
+        cell.dataset.syncStatus = status;
+        const indicator = cell.querySelector('.sync-indicator');
+        if (indicator) indicator.className = 'sync-indicator ' + status;
+        updateGlobalStatus();
+    }
+    function markAllActivitiesAsPending() {
+        document.querySelectorAll('.activity-cell').forEach(cell => {
+            cell.dataset.syncStatus = 'pending';
+            const indicator = cell.querySelector('.sync-indicator');
+            if (indicator) indicator.className = 'sync-indicator pending';
+        });
+        updateGlobalStatus();
+    }
+    function getPendingActivities() {
+        const pendings = [];
+        document.querySelectorAll('.activity-cell').forEach(cell => {
+            if (cell.dataset.syncStatus === 'pending') {
+                const row = cell.closest('tr');
+                const timeCell = row.querySelector('.time');
+                const day = cell.closest('table').id.replace('-table', '');
+                if (timeCell) {
+                    pendings.push({
+                        day: day,
+                        time: timeCell.dataset.time,
+                        activity: cell.dataset.activity,
+                        duration: parseInt(cell.dataset.duration) || 60,
+                        period: cell.dataset.period || 'semanal',
+                        semanas: JSON.parse(cell.dataset.semanas || '[1,3]'),
+                        mensalTipo: cell.dataset.mensalTipo || 'dia',
+                        diaMes: parseInt(cell.dataset.diaMes) || 1,
+                        ocorrencia: parseInt(cell.dataset.ocorrencia) || 1,
+                        diaSemana: parseInt(cell.dataset.diaSemana) || 0,
+                        reminder: parseInt(cell.dataset.reminder) || 0,
+                        cell: cell
+                    });
+                }
+            }
+        });
+        return pendings;
+    }
+    function updateGlobalStatus() {
+        const pendings = getPendingActivities();
+        const totalActivities = document.querySelectorAll('.activity-cell').length;
+        const el = document.getElementById('syncStatus');
+        if (totalActivities === 0) {
+            setGlobalSyncStatus('disconnected', '📭 Nenhuma atividade');
+            return;
+        }
+        if (pendings.length === 0) {
+            setGlobalSyncStatus('synced', '✅ Tudo sincronizado');
+        } else {
+            setGlobalSyncStatus('pending', `⏳ ${pendings.length} pendente${pendings.length > 1 ? 's' : ''}`);
+        }
+    }
+    function setGlobalSyncStatus(status, text) {
+        globalSyncStatus = status;
+        const el = document.getElementById('syncStatus');
+        const texts = {
+            'synced': '✅ Tudo sincronizado',
+            'pending': '⏳ Pendente',
+            'disconnected': '🔴 Desconectado',
+            'error': '❌ Erro',
+            'syncing': '🔄 Sincronizando...'
+        };
+        el.className = 'sync-status ' + status;
+        el.textContent = text || texts[status] || '🔴 Desconectado';
+    }
+    function loadGlobalStatusFromStorage() {
+        const saved = localStorage.getItem(SYNC_STATUS_KEY);
+        if (saved) {
+            globalSyncStatus = saved;
+        } else {
+            globalSyncStatus = 'disconnected';
+        }
+        updateGlobalStatus();
+    }
+
+    // ===================================================================
+    // EMOJI PICKER (resumido)
+    // ===================================================================
+    const EMOJIS = {
+        '😀':'Smileys','😁':'Smileys','😂':'Smileys','🤣':'Smileys','😃':'Smileys','😄':'Smileys','😅':'Smileys','😆':'Smileys','😉':'Smileys','😊':'Smileys','😋':'Smileys','😎':'Smileys','😍':'Smileys','🥰':'Smileys','😘':'Smileys','😗':'Smileys','😙':'Smileys','😚':'Smileys','🥲':'Smileys','😜':'Smileys','😝':'Smileys','😛':'Smileys','🤑':'Smileys','🤓':'Smileys','😈':'Smileys','👿':'Smileys','👹':'Smileys','👺':'Smileys','💀':'Smileys','👻':'Smileys','👽':'Smileys','🤖':'Smileys','💩':'Smileys','😺':'Smileys','😸':'Smileys','😻':'Smileys','😽':'Smileys','🙀':'Smileys','🙈':'Smileys','🙉':'Smileys','🙊':'Smileys',
+        '👋':'Pessoas','🤚':'Pessoas','✋':'Pessoas','🖐️':'Pessoas','🖖':'Pessoas','👌':'Pessoas','🤌':'Pessoas','🤏':'Pessoas','✌️':'Pessoas','🤞':'Pessoas','🤟':'Pessoas','🤘':'Pessoas','🤙':'Pessoas','👈':'Pessoas','👉':'Pessoas','👆':'Pessoas','🖕':'Pessoas','👇':'Pessoas','☝️':'Pessoas','👍':'Pessoas','👎':'Pessoas','👊':'Pessoas','✊':'Pessoas','🤛':'Pessoas','🤜':'Pessoas','👏':'Pessoas','🙌':'Pessoas','👐':'Pessoas','🤲':'Pessoas','🤝':'Pessoas','🙏':'Pessoas','✍️':'Pessoas','💅':'Pessoas','🤳':'Pessoas','💪':'Pessoas','🦾':'Pessoas','🦵':'Pessoas','🦶':'Pessoas','👂':'Pessoas','🦻':'Pessoas','👃':'Pessoas','🧠':'Pessoas','🫀':'Pessoas','🫁':'Pessoas','🦷':'Pessoas','🦴':'Pessoas','👀':'Pessoas','👁️':'Pessoas','👅':'Pessoas','👄':'Pessoas','🫦':'Pessoas','👶':'Pessoas','🧒':'Pessoas','👦':'Pessoas','👧':'Pessoas','🧑':'Pessoas','👨':'Pessoas','👩':'Pessoas','🧔':'Pessoas','👵':'Pessoas','👴':'Pessoas',
+        '🐶':'Animais','🐱':'Animais','🐭':'Animais','🐹':'Animais','🐰':'Animais','🦊':'Animais','🐻':'Animais','🐼':'Animais','🐨':'Animais','🐯':'Animais','🦁':'Animais','🐮':'Animais','🐷':'Animais','🐽':'Animais','🐸':'Animais','🐵':'Animais','🐔':'Animais','🐧':'Animais','🐦':'Animais','🐤':'Animais','🐣':'Animais','🐥':'Animais','🦆':'Animais','🦅':'Animais','🦉':'Animais','🦇':'Animais','🐺':'Animais','🐗':'Animais','🐴':'Animais','🦄':'Animais','🐝':'Animais','🪱':'Animais','🐛':'Animais','🦋':'Animais','🐌':'Animais','🐞':'Animais','🐜':'Animais','🪰':'Animais','🪲':'Animais','🪳':'Animais','🐢':'Animais','🐍':'Animais','🦎':'Animais','🦖':'Animais','🦕':'Animais','🐙':'Animais','🦑':'Animais','🦐':'Animais','🦀':'Animais','🐡':'Animais','🐠':'Animais','🐟':'Animais','🐬':'Animais','🐳':'Animais','🐋':'Animais','🦈':'Animais','🐊':'Animais','🐅':'Animais','🐆':'Animais','🦓':'Animais','🦍':'Animais','🦧':'Animais','🦣':'Animais','🐘':'Animais','🦛':'Animais','🦏':'Animais','🐪':'Animais','🐫':'Animais','🦒':'Animais','🐃':'Animais','🐂':'Animais','🐄':'Animais','🐎':'Animais','🐖':'Animais','🐏':'Animais','🐑':'Animais','🦙':'Animais','🐐':'Animais','🦌':'Animais','🐕':'Animais','🐩':'Animais','🦮':'Animais','🐕‍🦺':'Animais','🐈':'Animais','🐈‍⬛':'Animais','🪶':'Animais','🐓':'Animais','🦃':'Animais','🕊️':'Animais','🐇':'Animais','🦝':'Animais','🦨':'Animais','🦡':'Animais','🦫':'Animais','🦦':'Animais','🦥':'Animais','🐁':'Animais','🐀':'Animais','🐿️':'Animais','🦔':'Animais',
+        '🍎':'Comida','🍐':'Comida','🍊':'Comida','🍋':'Comida','🍌':'Comida','🍉':'Comida','🍇':'Comida','🍓':'Comida','🫐':'Comida','🍈':'Comida','🍒':'Comida','🍑':'Comida','🥭':'Comida','🍍':'Comida','🥥':'Comida','🥝':'Comida','🍅':'Comida','🍆':'Comida','🥑':'Comida','🫑':'Comida','🥬':'Comida','🥒':'Comida','🌶️':'Comida','🫚':'Comida','🧄':'Comida','🧅':'Comida','🥕':'Comida','🌽':'Comida','🥔':'Comida','🍠':'Comida','🥐':'Comida','🥖':'Comida','🫓':'Comida','🥨':'Comida','🥯':'Comida','🥞':'Comida','🧇':'Comida','🧀':'Comida','🍖':'Comida','🍗':'Comida','🥩':'Comida','🥓':'Comida','🍔':'Comida','🍟':'Comida','🍕':'Comida','🌭':'Comida','🥪':'Comida','🌮':'Comida','🌯':'Comida','🫔':'Comida','🥙':'Comida','🧆':'Comida','🥚':'Comida','🍳':'Comida','🥘':'Comida','🍲':'Comida','🫕':'Comida','🥣':'Comida','🥗':'Comida','🍿':'Comida','🧈':'Comida','🧂':'Comida','🥫':'Comida','🍱':'Comida','🍘':'Comida','🍙':'Comida','🍚':'Comida','🍛':'Comida','🍜':'Comida','🍝':'Comida','🍢':'Comida','🍣':'Comida','🍤':'Comida','🍥':'Comida','🥮':'Comida','🍡':'Comida','🥟':'Comida','🥠':'Comida','🥡':'Comida','🦪':'Comida','🍦':'Comida','🍧':'Comida','🍨':'Comida','🍩':'Comida','🍪':'Comida','🎂':'Comida','🍰':'Comida','🧁':'Comida','🥧':'Comida','🍫':'Comida','🍬':'Comida','🍭':'Comida','🍮':'Comida','🍯':'Comida','🥛':'Comida','🍼':'Comida','🫗':'Comida','☕':'Comida','🫖':'Comida','🍵':'Comida','🍶':'Comida','🍾':'Comida','🍷':'Comida','🍸':'Comida','🍹':'Comida','🍺':'Comida','🍻':'Comida','🥂':'Comida','🥃':'Comida','🫧':'Comida','🥤':'Comida','🧃':'Comida','🧉':'Comida','🧊':'Comida',
+        '⚽':'Atividades','🏀':'Atividades','🏈':'Atividades','⚾':'Atividades','🥎':'Atividades','🎾':'Atividades','🏐':'Atividades','🏉':'Atividades','🥏':'Atividades','🎱':'Atividades','🪀':'Atividades','🏓':'Atividades','🏸':'Atividades','🏒':'Atividades','🏑':'Atividades','🥍':'Atividades','🏏':'Atividades','🥅':'Atividades','⛳':'Atividades','🪁':'Atividades','🏹':'Atividades','🎣':'Atividades','🤿':'Atividades','🥊':'Atividades','🥋':'Atividades','🎽':'Atividades','🛹':'Atividades','🛼':'Atividades','🪂':'Atividades','⛷️':'Atividades','🏂':'Atividades','🏋️':'Atividades','🤼':'Atividades','🤸':'Atividades','⛹️':'Atividades','🤾':'Atividades','🏌️':'Atividades','🏇':'Atividades','🧘':'Atividades','🏄':'Atividades','🏊':'Atividades','🤽':'Atividades','🚣':'Atividades','🧗':'Atividades','🚵':'Atividades','🚴':'Atividades','🪄':'Atividades','🪅':'Atividades','🎭':'Atividades','🎨':'Atividades','🎪':'Atividades','🎟️':'Atividades','🎫':'Atividades','🎖️':'Atividades','🏆':'Atividades','🏅':'Atividades','🥇':'Atividades','🥈':'Atividades','🥉':'Atividades',
+        '🌍':'Viagens','🌎':'Viagens','🌏':'Viagens','🌕':'Viagens','🌖':'Viagens','🌗':'Viagens','🌘':'Viagens','🌑':'Viagens','🌒':'Viagens','🌓':'Viagens','🌔':'Viagens','🌙':'Viagens','🌚':'Viagens','🌛':'Viagens','🌜':'Viagens','☀️':'Viagens','🌤️':'Viagens','🌥️':'Viagens','🌦️':'Viagens','🌧️':'Viagens','🌨️':'Viagens','🌩️':'Viagens','🌪️':'Viagens','🌫️':'Viagens','🌬️':'Viagens','🌈':'Viagens','☂️':'Viagens','☔':'Viagens','⛄':'Viagens','❄️':'Viagens','🔥':'Viagens','💧':'Viagens','🌊':'Viagens','🧭':'Viagens','🏔️':'Viagens','⛰️':'Viagens','🌋':'Viagens','🗻':'Viagens','🏕️':'Viagens','🏖️':'Viagens','🏜️':'Viagens','🏝️':'Viagens','🏞️':'Viagens','🏟️':'Viagens','🏛️':'Viagens','🏗️':'Viagens','🧱':'Viagens','🪨':'Viagens','🪵':'Viagens','🛖':'Viagens','🏘️':'Viagens','🏚️':'Viagens','🏠':'Viagens','🏡':'Viagens','🏢':'Viagens','🏣':'Viagens','🏤':'Viagens','🏥':'Viagens','🏦':'Viagens','🏨':'Viagens','🏩':'Viagens','🏪':'Viagens','🏫':'Viagens','🏬':'Viagens','🏭':'Viagens','🏯':'Viagens','🏰':'Viagens','💒':'Viagens','🗼':'Viagens','🗽':'Viagens','⛪':'Viagens','🕌':'Viagens','🛕':'Viagens','🕍':'Viagens','⛩️':'Viagens','🕋':'Viagens','⛲':'Viagens','⛺':'Viagens','🌁':'Viagens','🌃':'Viagens','🏙️':'Viagens','🌄':'Viagens','🌅':'Viagens','🌆':'Viagens','🌇':'Viagens','🌉':'Viagens','🎠':'Viagens','🎡':'Viagens','🎢':'Viagens','💈':'Viagens','🚂':'Viagens','🚃':'Viagens','🚄':'Viagens','🚅':'Viagens','🚆':'Viagens','🚇':'Viagens','🚈':'Viagens','🚉':'Viagens','🚊':'Viagens','🚝':'Viagens','🚞':'Viagens','🚋':'Viagens','🚌':'Viagens','🚍':'Viagens','🚎':'Viagens','🚐':'Viagens','🚑':'Viagens','🚒':'Viagens','🚓':'Viagens','🚔':'Viagens','🚕':'Viagens','🚖':'Viagens','🚗':'Viagens','🚘':'Viagens','🚙':'Viagens','🛻':'Viagens','🚚':'Viagens','🚛':'Viagens','🚜':'Viagens','🏎️':'Viagens','🏍️':'Viagens','🛵':'Viagens','🦽':'Viagens','🦼':'Viagens','🛴':'Viagens','🚲':'Viagens','🚁':'Viagens','✈️':'Viagens','🛩️':'Viagens','🛫':'Viagens','🛬':'Viagens','💺':'Viagens','🚀':'Viagens','🛸':'Viagens','🛶':'Viagens','🚢':'Viagens','🛟':'Viagens',
+        '🎃':'Objetos','🎄':'Objetos','🎆':'Objetos','🎇':'Objetos','🧨':'Objetos','✨':'Objetos','🎈':'Objetos','🎉':'Objetos','🎊':'Objetos','🎋':'Objetos','🎍':'Objetos','🎎':'Objetos','🎏':'Objetos','🎐':'Objetos','🎑':'Objetos','🧧':'Objetos','🎀':'Objetos','🎁':'Objetos','🎗️':'Objetos','🎟️':'Objetos','🎫':'Objetos','🎖️':'Objetos','🏆':'Objetos','🏅':'Objetos','🥇':'Objetos','🥈':'Objetos','🥉':'Objetos','💄':'Objetos','💋':'Objetos',
+        '🔞':'Símbolos','📵':'Símbolos','🚭':'Símbolos','🚯':'Símbolos','🚱':'Símbolos','🚷':'Símbolos','📛':'Símbolos','🉑':'Símbolos','🉐':'Símbolos','㊙️':'Símbolos','㊗️':'Símbolos','🈴':'Símbolos','🈵':'Símbolos','🈹':'Símbolos','🈲':'Símbolos','🈶':'Símbolos','🈚':'Símbolos','🈸':'Símbolos','🈺':'Símbolos','🈷️':'Símbolos','🈳':'Símbolos','🈂️':'Símbolos','🈯':'Símbolos',
+        '🏳️':'Bandeiras','🏴':'Bandeiras','🏁':'Bandeiras','🚩':'Bandeiras','🎌':'Bandeiras','🏳️‍🌈':'Bandeiras','🏳️‍⚧️':'Bandeiras','🏴‍☠️':'Bandeiras','🇧🇷':'Bandeiras','🇵🇹':'Bandeiras','🇺🇸':'Bandeiras','🇬🇧':'Bandeiras','🇫🇷':'Bandeiras','🇩🇪':'Bandeiras','🇪🇸':'Bandeiras','🇮🇹':'Bandeiras','🇯🇵':'Bandeiras','🇨🇳':'Bandeiras','🇷🇺':'Bandeiras','🇦🇷':'Bandeiras','🇨🇱':'Bandeiras','🇨🇴':'Bandeiras','🇲🇽':'Bandeiras','🇨🇦':'Bandeiras','🇦🇺':'Bandeiras','🇳🇿':'Bandeiras','🇿🇦':'Bandeiras','🇮🇳':'Bandeiras','🇰🇷':'Bandeiras'
+    };
+
+    let currentEmojiTarget = null;
+    function openEmojiPicker(targetId) {
+        currentEmojiTarget = targetId;
+        document.getElementById('emojiPicker').classList.add('active');
+        document.getElementById('emojiOverlay').classList.add('active');
+        document.getElementById('emojiSearch').value = '';
+        renderEmojis(Object.keys(EMOJIS));
+        document.getElementById('emojiSearch').focus();
+    }
+    function closeEmojiPicker() {
+        document.getElementById('emojiPicker').classList.remove('active');
+        document.getElementById('emojiOverlay').classList.remove('active');
+        currentEmojiTarget = null;
+    }
+    function renderEmojis(emojiList) {
+        const grid = document.getElementById('emojiGrid');
+        grid.innerHTML = '';
+        let lastCategory = '';
+        emojiList.forEach(emoji => {
+            const category = EMOJIS[emoji] || 'Outros';
+            if (category !== lastCategory) {
+                lastCategory = category;
+                const catLabel = document.createElement('div');
+                catLabel.className = 'emoji-category';
+                catLabel.textContent = category;
+                grid.appendChild(catLabel);
+            }
+            const btn = document.createElement('button');
+            btn.className = 'emoji-item';
+            btn.textContent = emoji;
+            btn.onclick = () => insertEmoji(emoji);
+            grid.appendChild(btn);
+        });
+        if (emojiList.length === 0) {
+            const empty = document.createElement('div');
+            empty.style.gridColumn = '1 / -1';
+            empty.style.textAlign = 'center';
+            empty.style.padding = '20px';
+            empty.style.color = '#999';
+            empty.textContent = 'Nenhum emoji encontrado';
+            grid.appendChild(empty);
+        }
+    }
+    function filterEmojis() {
+        const search = document.getElementById('emojiSearch').value.toLowerCase();
+        const filtered = Object.keys(EMOJIS).filter(emoji => 
+            emoji.includes(search) || 
+            EMOJIS[emoji].toLowerCase().includes(search) ||
+            emoji.toLowerCase().includes(search)
+        );
+        renderEmojis(filtered);
+    }
+    function insertEmoji(emoji) {
+        if (currentEmojiTarget) {
+            const input = document.getElementById(currentEmojiTarget);
+            if (input) {
+                const cursorPos = input.selectionStart || input.value.length;
+                const textBefore = input.value.substring(0, cursorPos);
+                const textAfter = input.value.substring(cursorPos);
+                input.value = textBefore + emoji + textAfter;
+                input.focus();
+                input.selectionStart = input.selectionEnd = cursorPos + emoji.length;
+            }
+        }
+        closeEmojiPicker();
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeEmojiPicker();
+    });
+
+    // ===================================================================
+    // PERIODICIDADE
     // ===================================================================
     function renderPeriodOptions(containerId, selectedPeriod, selectedData) {
         const container = document.getElementById(containerId);
@@ -983,8 +1351,7 @@
             <div class="period-detail" id="${containerId}_detail">
         `;
 
-        // Detalhes quinzenais
-        const weeks = data.semanas || [1, 3];
+        const weeks = data.semanas || [1,3];
         html += `
             <div id="${containerId}_quinzenal" style="${period === 'quinzenal' ? 'display:block' : 'display:none'}">
                 <label style="font-weight:500;font-size:13px;">Semanas do mês:</label>
@@ -999,7 +1366,6 @@
             </div>
         `;
 
-        // Detalhes mensais
         const mensalTipo = data.mensalTipo || 'dia';
         const diaMes = data.diaMes || 1;
         const ocorrencia = data.ocorrencia || 1;
@@ -1032,11 +1398,9 @@
                 </div>
             </div>
         `;
-
         html += `</div>`;
         container.innerHTML = html;
 
-        // Eventos para mostrar/esconder detalhes
         container.querySelectorAll('input[name="' + containerId + '_period"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const val = this.value;
@@ -1049,7 +1413,6 @@
                 }
             });
         });
-        // Eventos para alternar entre dia do mês e ocorrência
         container.querySelectorAll('input[name="' + containerId + '_mensalTipo"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const val = this.value;
@@ -1061,9 +1424,6 @@
         });
     }
 
-    // ===================================================================
-    // COLETA DE DADOS DE PERIODICIDADE DOS MODAIS
-    // ===================================================================
     function getPeriodData(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return null;
@@ -1075,7 +1435,7 @@
         if (period === 'quinzenal') {
             const checks = container.querySelectorAll('input[name="' + containerId + '_weeks"]:checked');
             data.semanas = Array.from(checks).map(cb => parseInt(cb.value));
-            if (data.semanas.length === 0) data.semanas = [1, 3];
+            if (data.semanas.length === 0) data.semanas = [1,3];
         } else if (period === 'mensal') {
             const tipoRadio = container.querySelector('input[name="' + containerId + '_mensalTipo"]:checked');
             if (tipoRadio) {
@@ -1090,7 +1450,6 @@
                     data.diaSemana = parseInt(diaSelect.value) || 0;
                 }
             } else {
-                // fallback
                 data.mensalTipo = 'dia';
                 data.diaMes = 1;
             }
@@ -1099,119 +1458,60 @@
     }
 
     // ===================================================================
-    // FUNÇÃO PARA VERIFICAR SE ATIVIDADE OCORRE NA DATA ATUAL
+    // FUNÇÕES DE FILTRO POR DATA E PERIODICIDADE
     // ===================================================================
-    function activityOccursToday(activity, date) {
-        const period = activity.period || 'semanal';
-        if (period === 'semanal') return true;
-
-        const dayOfMonth = date.getDate();
-        const month = date.getMonth();
-        const year = date.getFullYear();
-        const weekOfMonth = getWeekOfMonth(date);
-        const dayOfWeek = date.getDay(); // 0=domingo
-
-        if (period === 'quinzenal') {
-            const weeks = activity.semanas || [1, 3];
-            return weeks.includes(weekOfMonth);
-        }
-
-        if (period === 'mensal') {
-            const tipo = activity.mensalTipo || 'dia';
-            if (tipo === 'dia') {
-                let dia = activity.diaMes || 1;
-                // ajusta para último dia do mês se dia inválido
-                const lastDay = new Date(year, month + 1, 0).getDate();
-                if (dia > lastDay) dia = lastDay;
-                return dayOfMonth === dia;
-            } else {
-                // ocorrência de dia da semana
-                const ocorrencia = activity.ocorrencia || 1;
-                const diaSemana = activity.diaSemana || 0;
-                // verifica se é a ocorrência correta
-                return getOccurrenceOfWeekDay(date) === ocorrencia && dayOfWeek === diaSemana;
-            }
-        }
-        return true;
+    function getStartOfWeek(offset) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const start = new Date(today);
+        start.setDate(today.getDate() - today.getDay() + 1);
+        start.setDate(start.getDate() + offset * 7);
+        return start;
     }
 
-    function getWeekOfMonth(date) {
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-        const dayOfMonth = date.getDate();
-        return Math.ceil((dayOfMonth + firstDay) / 7);
-    }
+    function filterActivitiesByDate(day) {
+        const table = document.getElementById(day + '-table');
+        if (!table) return;
+        const rows = table.querySelectorAll('tr');
+        const dayMap = { 'segunda':1, 'terca':2, 'quarta':3, 'quinta':4, 'sexta':5, 'sabado':6, 'domingo':0 };
+        const dayIndex = dayMap[day];
+        const startOfWeek = getStartOfWeek(currentWeekOffset);
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + (dayIndex - 1) % 7);
+        if (dayIndex === 0) date.setDate(startOfWeek.getDate() + 6);
 
-    function getOccurrenceOfWeekDay(date) {
-        const day = date.getDate();
-        return Math.ceil(day / 7);
+        rows.forEach((row, index) => {
+            if (index === 0) return;
+            const activityCell = row.querySelector('.activity-cell');
+            if (!activityCell) return;
+            const period = activityCell.dataset.period || 'semanal';
+            const timeCell = row.querySelector('.time');
+            if (!timeCell) return;
+            const activityObj = {
+                period: period,
+                semanas: JSON.parse(activityCell.dataset.semanas || '[1,3]'),
+                mensalTipo: activityCell.dataset.mensalTipo || 'dia',
+                diaMes: parseInt(activityCell.dataset.diaMes) || 1,
+                ocorrencia: parseInt(activityCell.dataset.ocorrencia) || 1,
+                diaSemana: parseInt(activityCell.dataset.diaSemana) || 0
+            };
+            const occurs = activityOccursToday(activityObj, date);
+            row.style.display = occurs ? '' : 'none';
+        });
     }
 
     // ===================================================================
-    // CONTROLE DE STATUS INDIVIDUAL E GLOBAL (já existente, mantido)
-    // ===================================================================
-    // (As funções getActivityCell, setActivityStatus, markActivityAsPending,
-    // markActivityAsSynced, markAllActivitiesAsPending, markAllActivitiesAsSynced,
-    // getPendingActivities, updateGlobalStatus, setGlobalSyncStatus,
-    // loadGlobalStatusFromStorage permanecem as mesmas. Vou omiti-las aqui
-    // por brevidade, mas elas estão no código final completo.
-    // ===================================================================
-
-    // ===================================================================
-    // EMOJI PICKER (mantido)
-    // ===================================================================
-    const EMOJIS = {
-        // ... (lista completa de emojis, mesmo do código original)
-        // Para não estourar o limite, vou manter apenas alguns essenciais,
-        // mas no código final enviarei a lista completa.
-    };
-    // (As funções openEmojiPicker, closeEmojiPicker, renderEmojis,
-    // filterEmojis, insertEmoji permanecem as mesmas)
-    // ===================================================================
-
-    // ===================================================================
-    // MODELO DE ROTINA ATUALIZADO COM PERIODICIDADE
-    // ===================================================================
-    const DEFAULT_ROUTINE = {
-        segunda: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10, period: "semanal" },
-            { time: "08:30", activity: "Ioga e meditação", duration: 60, reminder: 10, period: "semanal" },
-            { time: "09:30", activity: "Café da manhã", duration: 30, reminder: 10, period: "semanal" },
-            { time: "09:40", activity: "🧺 Colocar roupas na máquina (Tarefa do dia)", duration: 20, reminder: 10, period: "semanal" },
-            { time: "10:15", activity: "Busca por emprego / Atualização de currículo", duration: 120, reminder: 10, period: "semanal" },
-            { time: "12:15", activity: "Almoço", duration: 60, reminder: 10, period: "semanal" },
-            { time: "14:00", activity: "Limpeza diária da caixa de areia", duration: 30, reminder: 10, period: "semanal" },
-            { time: "16:00", activity: "Exercício físico", duration: 60, reminder: 10, period: "semanal" },
-            { time: "17:00", activity: "Estudos", duration: 90, reminder: 10, period: "semanal" },
-            { time: "18:45", activity: "🧺 Transferir roupas + pendurar", duration: 30, reminder: 10, period: "semanal" },
-            { time: "19:00", activity: "Jantar", duration: 60, reminder: 10, period: "semanal" },
-            { time: "20:00", activity: "Leitura", duration: 30, reminder: 10, period: "semanal" },
-            { time: "20:30", activity: "Lazer", duration: 60, reminder: 10, period: "semanal" },
-            { time: "21:30", activity: "Arrumação do espaço para o dia seguinte", duration: 30, reminder: 10, period: "semanal" }
-        ],
-        // (terca, quarta, quinta, sexta, sabado, domingo similares, com atividades quinzenais e mensais adicionadas)
-        // Para este exemplo, colocarei apenas a segunda completa e as outras com os mesmos itens semanais,
-        // mas no código final enviarei todas as atividades com periodicidade.
-        // As atividades quinzenais e mensais serão adicionadas como exemplos.
-        terca: [
-            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, reminder: 10, period: "semanal" },
-            // ... etc
-        ],
-        // ...
-        // Atividades quinzenais/mensais podem ser adicionadas manualmente pelo usuário.
-    };
-
-    // ===================================================================
-    // RENDERIZAÇÃO (com periodicidade)
+    // RENDERIZAÇÃO
     // ===================================================================
     function renderActivityCell(cell) {
         const day = cell.closest('table').id.replace('-table','');
         const time = cell.closest('tr').querySelector('.time').dataset.time;
         const activity = cell.dataset.activity;
         const duration = parseInt(cell.dataset.duration) || 60;
-        const reminder = parseInt(cell.dataset.reminder) || 10;
         const syncStatus = cell.dataset.syncStatus || 'pending';
         const period = cell.dataset.period || 'semanal';
         const periodLabel = { semanal: '🔁 Semanal', quinzenal: '📅 Quinzenal', mensal: '📆 Mensal' }[period] || '';
+        const reminder = parseInt(cell.dataset.reminder) || 0;
 
         cell.innerHTML = '';
         
@@ -1228,12 +1528,12 @@
         durationBadge.className = 'activity-duration-badge';
         durationBadge.textContent = duration + 'min';
         cell.appendChild(durationBadge);
-        
+
         if (reminder > 0) {
-            const reminderBadge = document.createElement('span');
-            reminderBadge.className = 'activity-reminder-badge';
-            reminderBadge.textContent = '🔔' + reminder + 'min';
-            cell.appendChild(reminderBadge);
+            const remBadge = document.createElement('span');
+            remBadge.className = 'activity-reminder-badge';
+            remBadge.textContent = '🔔' + reminder + 'min';
+            cell.appendChild(remBadge);
         }
 
         if (period && period !== 'semanal') {
@@ -1246,7 +1546,7 @@
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-btn';
         editBtn.textContent = '✏️';
-        editBtn.addEventListener('click', (e) => openEditModal(day, time, activity, duration, reminder, period, cell.dataset, e));
+        editBtn.addEventListener('click', (e) => openEditModal(day, time, activity, duration, period, reminder, cell.dataset, e));
         cell.appendChild(editBtn);
         
         const delBtn = document.createElement('button');
@@ -1259,21 +1559,20 @@
     }
 
     // ===================================================================
-    // EDIÇÃO (com periodicidade)
+    // EDIÇÃO
     // ===================================================================
-    function openEditModal(day, time, activity, duration, reminder, period, data, event) {
+    function openEditModal(day, time, activity, duration, period, reminder, data, event) {
         event.stopPropagation();
         const modal = document.getElementById('noteModal');
         document.getElementById('editActivityName').value = activity;
         document.getElementById('editDuration').value = duration || 60;
-        document.getElementById('editReminder').value = reminder || 10;
+        document.getElementById('editReminder').value = reminder || '';
         document.getElementById('modalActivityTitle').textContent = 'Editar Atividade';
         document.getElementById('modalActivityTime').textContent = time;
         document.getElementById('noteLabel').textContent = '✏️ Edite a atividade:';
         modal.dataset.day = day;
         modal.dataset.time = time;
 
-        // Preenche a periodicidade com os dados atuais
         const periodData = {
             period: period || 'semanal',
             semanas: data.semanas ? JSON.parse(data.semanas) : [1,3],
@@ -1298,7 +1597,7 @@
         const time = modal.dataset.time;
         const newActivity = activityInput.value.trim();
         const newDuration = parseInt(durationInput.value) || 60;
-        const newReminder = parseInt(reminderInput.value) || 10;
+        const newReminder = parseInt(reminderInput.value) || 0;
         const periodData = getPeriodData('editPeriodContainer');
         
         if (!newActivity) { alert('A atividade não pode ficar vazia.'); return; }
@@ -1338,21 +1637,41 @@
         closeModal();
         saveScheduleToStorage();
         updateGlobalStatus();
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) filterActivitiesByDate(activeTab.id);
     }
 
     // ===================================================================
-    // NOVA ATIVIDADE (com periodicidade)
+    // NOVA ATIVIDADE
     // ===================================================================
     function openAddModal() {
         document.getElementById('newActivityName').value = '';
         document.getElementById('newActivityTime').value = '';
         document.getElementById('newActivityDuration').value = 60;
-        document.getElementById('newActivityReminder').value = 10;
+        document.getElementById('newActivityReminder').value = '';
         document.querySelectorAll('input[name="newDay"]').forEach(cb => cb.checked = false);
-        // Renderiza periodicidade com padrão semanal
         renderPeriodOptions('addPeriodContainer', 'semanal', {});
         document.getElementById('addModal').classList.add('show');
         setTimeout(() => document.getElementById('newActivityName').focus(), 100);
+    }
+
+    function checkDuplicateByName(day, name, timeToIgnore) {
+        const table = document.getElementById(day + '-table');
+        if (!table) return false;
+        const rows = table.querySelectorAll('tr');
+        const cleanName = name.toLowerCase().trim();
+        for (let row of rows) {
+            const timeCell = row.querySelector('.time');
+            const activityCell = row.querySelector('.activity-cell');
+            if (activityCell && timeCell) {
+                const existingName = activityCell.dataset.activity.toLowerCase().trim();
+                const existingTime = timeCell.dataset.time;
+                if (existingName === cleanName && (timeToIgnore === undefined || existingTime !== timeToIgnore)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     function saveNewActivity() {
@@ -1360,7 +1679,7 @@
         const name = document.getElementById('newActivityName').value.trim();
         const time = document.getElementById('newActivityTime').value;
         const duration = parseInt(document.getElementById('newActivityDuration').value) || 60;
-        const reminder = parseInt(document.getElementById('newActivityReminder').value) || 10;
+        const reminder = parseInt(document.getElementById('newActivityReminder').value) || 0;
         const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
         const periodData = getPeriodData('addPeriodContainer');
         
@@ -1369,6 +1688,17 @@
         if (duration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (reminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
         if (selectedDays.length === 0) { alert('Selecione pelo menos um dia.'); return; }
+
+        const dupDays = [];
+        selectedDays.forEach(day => {
+            if (checkDuplicateByName(day, name)) {
+                dupDays.push(day);
+            }
+        });
+        if (dupDays.length > 0) {
+            const msg = `⚠️ A atividade "${name}" já existe em: ${dupDays.join(', ')}.\nDeseja adicionar mesmo assim?`;
+            if (!confirm(msg)) return;
+        }
         
         selectedDays.forEach(day => {
             const table = document.getElementById(day+'-table');
@@ -1378,6 +1708,7 @@
             if (existingRow) {
                 let activityCell = existingRow.querySelector('.activity-cell');
                 activityCell.dataset.activity += `, ${name}`;
+                activityCell.dataset.reminder = reminder;
                 activityCell.dataset.syncStatus = 'pending';
                 renderActivityCell(activityCell);
             } else {
@@ -1419,10 +1750,108 @@
         closeAddModal();
         saveScheduleToStorage();
         updateGlobalStatus();
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) filterActivitiesByDate(activeTab.id);
     }
 
     // ===================================================================
-    // PERSISTÊNCIA (atualizado para guardar periodicidade)
+    // DELETE E EDIÇÃO DE HORÁRIO
+    // ===================================================================
+    function deleteActivity(day, cellElement, event) {
+        event.stopPropagation();
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
+        if (confirm('Deletar esta atividade?')) {
+            cellElement.closest('tr').remove();
+            saveScheduleToStorage();
+            updateGlobalStatus();
+            updateImportantBox(day);
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab) filterActivitiesByDate(activeTab.id);
+        }
+    }
+
+    function editTime(day, element, currentTime) {
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
+        const newTime = prompt('Editar horário (HH:MM):', currentTime);
+        if (!newTime || newTime === currentTime) return;
+        if (!TIME_REGEX.test(newTime)) { alert('Horário inválido.'); return; }
+        const table = element.closest('table');
+        const conflict = Array.from(table.querySelectorAll('.time')).some(cell => cell !== element && cell.dataset.time === newTime);
+        if (conflict) { alert('Já existe atividade nesse horário.'); return; }
+        element.dataset.time = newTime;
+        element.textContent = newTime;
+        const activityCell = element.closest('tr').querySelector('.activity-cell');
+        if (activityCell) {
+            activityCell.dataset.syncStatus = 'pending';
+            const indicator = activityCell.querySelector('.sync-indicator');
+            if (indicator) indicator.className = 'sync-indicator pending';
+        }
+        sortTableByTime(table);
+        saveScheduleToStorage();
+        updateGlobalStatus();
+        updateImportantBox(day);
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) filterActivitiesByDate(activeTab.id);
+    }
+
+    function sortTableByTime(table) {
+        let rows = Array.from(table.rows).slice(1);
+        rows.sort((a,b) => a.querySelector('.time').dataset.time.localeCompare(b.querySelector('.time').dataset.time));
+        rows.forEach(row => table.appendChild(row));
+        const day = table.id.replace('-table','');
+        updateImportantBox(day);
+    }
+
+    function attachTimeClickHandlers() {
+        document.querySelectorAll('.time').forEach(cell => {
+            cell.addEventListener('click', () => {
+                const day = cell.closest('table').id.replace('-table','');
+                editTime(day, cell, cell.dataset.time);
+            });
+        });
+    }
+
+    // ===================================================================
+    // IMPORTANT BOX
+    // ===================================================================
+    function containsEmoji(text) { return /\p{Emoji}/u.test(text); }
+
+    function updateImportantBox(day) {
+        const listEl = document.getElementById(`important-list-${day}`);
+        if (!listEl) return;
+        const table = document.getElementById(`${day}-table`);
+        if (!table) return;
+        const rows = table.querySelectorAll('tr');
+        const importantItems = [];
+        rows.forEach((row, index) => {
+            if (index === 0) return;
+            if (row.style.display === 'none') return;
+            const timeCell = row.querySelector('.time');
+            const activityCell = row.querySelector('.activity-cell');
+            if (timeCell && activityCell && containsEmoji(activityCell.dataset.activity)) {
+                importantItems.push({ time: timeCell.dataset.time, activity: activityCell.dataset.activity });
+            }
+        });
+        listEl.innerHTML = '';
+        if (importantItems.length === 0) {
+            listEl.innerHTML = `<li class="important-empty">✨ Nenhuma atividade com emoji neste dia.</li>`;
+            return;
+        }
+        importantItems.sort((a,b) => a.time.localeCompare(b.time));
+        importantItems.forEach(item => {
+            const emojiMatch = item.activity.match(/\p{Emoji}/u);
+            const emoji = emojiMatch ? emojiMatch[0] : '⭐';
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="imp-time">${item.time}</span><span class="imp-emoji">${emoji}</span><span>${item.activity}</span>`;
+            listEl.appendChild(li);
+        });
+    }
+    function updateAllImportantBoxes() {
+        ['segunda','terca','quarta','quinta','sexta','sabado','domingo'].forEach(updateImportantBox);
+    }
+
+    // ===================================================================
+    // PERSISTÊNCIA
     // ===================================================================
     function saveScheduleToStorage() {
         const schedule = {};
@@ -1438,14 +1867,14 @@
                 const activityCell = row.querySelector('.activity-cell');
                 if (timeCell && activityCell) {
                     const duration = parseInt(activityCell.dataset.duration) || 60;
-                    const reminder = parseInt(activityCell.dataset.reminder) || 10;
                     const period = activityCell.dataset.period || 'semanal';
+                    const reminder = parseInt(activityCell.dataset.reminder) || 0;
                     const item = {
                         time: timeCell.dataset.time,
                         activity: activityCell.dataset.activity,
                         duration: duration,
-                        reminder: reminder,
                         period: period,
+                        reminder: reminder,
                         syncStatus: activityCell.dataset.syncStatus || 'pending'
                     };
                     if (period === 'quinzenal') {
@@ -1485,9 +1914,9 @@
                 table.appendChild(header);
                 schedule[day].forEach(item => {
                     const duration = item.duration || 60;
-                    const reminder = item.reminder || 10;
                     const syncStatus = item.syncStatus || 'pending';
                     const period = item.period || 'semanal';
+                    const reminder = item.reminder || 0;
                     const row = document.createElement('tr');
                     const timeCell = document.createElement('td');
                     timeCell.className = 'time';
@@ -1498,8 +1927,8 @@
                     activityCell.className = 'activity-cell';
                     activityCell.dataset.activity = item.activity;
                     activityCell.dataset.duration = duration;
-                    activityCell.dataset.reminder = reminder;
                     activityCell.dataset.period = period;
+                    activityCell.dataset.reminder = reminder;
                     activityCell.dataset.syncStatus = syncStatus;
                     if (period === 'quinzenal') {
                         activityCell.dataset.semanas = JSON.stringify(item.semanas || [1,3]);
@@ -1524,96 +1953,632 @@
         } catch (e) { return false; }
     }
 
-    // ===================================================================
-    // FILTRO DE EXIBIÇÃO POR PERIODICIDADE (aplicado ao carregar a aba)
-    // ===================================================================
-    function filterActivitiesByDate(day) {
-        const table = document.getElementById(day + '-table');
-        if (!table) return;
-        const rows = table.querySelectorAll('tr');
-        const today = new Date();
-        rows.forEach((row, index) => {
-            if (index === 0) return;
-            const activityCell = row.querySelector('.activity-cell');
-            if (!activityCell) return;
-            const period = activityCell.dataset.period || 'semanal';
-            const timeCell = row.querySelector('.time');
-            if (!timeCell) return;
-            const time = timeCell.dataset.time;
-            // Monta um objeto activity para verificação
-            const activityObj = {
-                period: period,
-                semanas: JSON.parse(activityCell.dataset.semanas || '[1,3]'),
-                mensalTipo: activityCell.dataset.mensalTipo || 'dia',
-                diaMes: parseInt(activityCell.dataset.diaMes) || 1,
-                ocorrencia: parseInt(activityCell.dataset.ocorrencia) || 1,
-                diaSemana: parseInt(activityCell.dataset.diaSemana) || 0
-            };
-            const occurs = activityOccursToday(activityObj, today);
-            row.style.display = occurs ? '' : 'none';
+    function clearSchedule() {
+        if (!confirm('⚠️ Isso vai apagar TODAS as atividades. Deseja continuar?')) return;
+        const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
+        days.forEach(day => {
+            const table = document.getElementById(day+'-table');
+            if (!table) return;
+            const header = table.querySelector('tr');
+            table.innerHTML = '';
+            table.appendChild(header);
         });
+        localStorage.removeItem(STORAGE_KEY);
+        updateAllImportantBoxes();
+        updateGlobalStatus();
+        alert('✅ Todas as atividades foram removidas.');
     }
 
-    // Modificar a função switchTab para aplicar o filtro
-    const originalSwitchTab = window.switchTab;
+    // ===================================================================
+    // MODELO DE ROTINA ATUALIZADO (COM TODAS AS SUAS ATIVIDADES)
+    // ===================================================================
+    const DEFAULT_ROUTINE = {
+        segunda: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "18:45", activity: "🧺 Transferir roupas", duration: 30, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        terca: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "09:40", activity: "🧼 Colocar toalhas e tapetinhos", duration: 20, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "18:45", activity: "🧼 Pendurar toalhas e tapetinhos", duration: 30, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        quarta: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "15:00", activity: "🧹 Limpeza completa do piso", duration: 60, period: "semanal" },
+            { time: "16:00", activity: "🐱 Troca completa da areia dos gatos", duration: 45, period: "semanal" },
+            { time: "16:45", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        quinta: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "18:45", activity: "🧺 Transferir roupas", duration: 30, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        sexta: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "15:00", activity: "🛏️ Organização do quarto", duration: 45, period: "semanal" },
+            { time: "16:00", activity: "🌿 Limpeza da varanda", duration: 45, period: "semanal" },
+            { time: "16:45", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        sabado: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "10:00", activity: "🛏️ Trocar lençóis", duration: 30, period: "quinzenal", semanas: [1,3] },
+            { time: "10:30", activity: "🧺 Toalhas de rosto e banho", duration: 30, period: "quinzenal", semanas: [2,4] },
+            { time: "11:00", activity: "❄️ Descongelar geladeira e limpar por dentro", duration: 45, period: "quinzenal", semanas: [1,3] },
+            { time: "11:30", activity: "🐱 Trocar toda a areia da caixa de areia dos gatos", duration: 30, period: "quinzenal", semanas: [2,4] },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "13:00", activity: "🚿 Faxina pesada do banheiro", duration: 90, period: "semanal" },
+            { time: "14:30", activity: "🐱 Limpeza do quartinho dos gatos", duration: 45, period: "semanal" },
+            { time: "15:15", activity: "🧺 Lavar roupa de cama e tapete do quarto", duration: 30, period: "quinzenal", semanas: [1,3] },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        domingo: [
+            { time: "09:00", activity: "🍳 Preparo das refeições da semana", duration: 120, period: "semanal" },
+            { time: "09:00", activity: "💰 Contas a pagar", duration: 30, period: "mensal", mensalTipo: "dia", diaMes: 1 },
+            { time: "09:30", activity: "🧹 Lavar tapete do quarto", duration: 30, period: "mensal", mensalTipo: "ocorrencia", ocorrencia: 2, diaSemana: 6 },
+            { time: "10:00", activity: "📆 Organizar armários e gavetas", duration: 60, period: "mensal", mensalTipo: "ocorrencia", ocorrencia: 3, diaSemana: 0 },
+            { time: "12:00", activity: "Congelamento das refeições", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Resto do dia livre", duration: 0, period: "semanal" }
+        ]
+    };
+
+    function loadRoutineModel() {
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização atual.'); return; }
+        if (!confirm('⚠️ Substituir atividades pelo modelo padrão?')) return;
+        const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
+        days.forEach(day => {
+            const table = document.getElementById(day+'-table');
+            if (!table) return;
+            const header = table.querySelector('tr');
+            table.innerHTML = '';
+            table.appendChild(header);
+            (DEFAULT_ROUTINE[day] || []).forEach(item => {
+                const duration = item.duration || 60;
+                const period = item.period || 'semanal';
+                const reminder = item.reminder || 0;
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time';
+                timeCell.dataset.time = item.time;
+                timeCell.textContent = item.time;
+                timeCell.addEventListener('click', () => { editTime(day, timeCell, item.time); });
+                const activityCell = document.createElement('td');
+                activityCell.className = 'activity-cell';
+                activityCell.dataset.activity = item.activity;
+                activityCell.dataset.duration = duration;
+                activityCell.dataset.period = period;
+                activityCell.dataset.reminder = reminder;
+                if (period === 'quinzenal') {
+                    activityCell.dataset.semanas = JSON.stringify(item.semanas || [1,3]);
+                } else if (period === 'mensal') {
+                    activityCell.dataset.mensalTipo = item.mensalTipo || 'dia';
+                    if (item.mensalTipo === 'dia') {
+                        activityCell.dataset.diaMes = item.diaMes || 1;
+                    } else {
+                        activityCell.dataset.ocorrencia = item.ocorrencia || 1;
+                        activityCell.dataset.diaSemana = item.diaSemana || 0;
+                    }
+                }
+                activityCell.dataset.syncStatus = 'pending';
+                row.appendChild(timeCell);
+                row.appendChild(activityCell);
+                table.appendChild(row);
+                renderActivityCell(activityCell);
+            });
+        });
+        saveScheduleToStorage();
+        updateAllImportantBoxes();
+        updateGlobalStatus();
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) filterActivitiesByDate(activeTab.id);
+        alert('✅ Rotina modelo carregada!');
+    }
+
+    // ===================================================================
+    // AUTENTICAÇÃO
+    // ===================================================================
+    function handleConnectClick() {
+        if (isAuthenticated) {
+            isAuthenticated = false;
+            localStorage.removeItem('googleToken');
+            localStorage.removeItem('googleTokenExpiry');
+            document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
+            document.getElementById('syncBtn').disabled = true;
+            document.getElementById('desyncBtn').disabled = true;
+            document.getElementById('userInfo').textContent = '';
+            setGlobalSyncStatus('disconnected', '🔴 Desconectado');
+            window.location.reload();
+        } else {
+            if (tokenClient) {
+                try {
+                    tokenClient.requestAccessToken({ prompt: 'consent' });
+                } catch(e) {
+                    console.error('Erro ao solicitar token:', e);
+                    setGlobalSyncStatus('error', '❌ Erro ao conectar. Verifique o console.');
+                }
+            } else {
+                console.error('tokenClient não inicializado');
+                setGlobalSyncStatus('error', '❌ Cliente de autenticação não inicializado.');
+            }
+        }
+    }
+
+    function initializeGoogleAuth() {
+        try {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: handleCredentialResponse,
+                error_callback: handleAuthError,
+            });
+            const storedToken = localStorage.getItem('googleToken');
+            const expiry = parseInt(localStorage.getItem('googleTokenExpiry') || '0', 10);
+            if (storedToken && Date.now() < expiry) {
+                isAuthenticated = true;
+                updateAuthUI();
+            } else if (storedToken) {
+                localStorage.removeItem('googleToken');
+                localStorage.removeItem('googleTokenExpiry');
+            }
+        } catch (e) {
+            console.error('Erro ao inicializar autenticação:', e);
+            setGlobalSyncStatus('error', '❌ Erro ao inicializar autenticação.');
+        }
+    }
+
+    function handleAuthError(error) {
+        console.error('Erro de autenticação:', error);
+        setGlobalSyncStatus('error', '❌ Erro: ' + (error.error || error.message || 'desconhecido'));
+    }
+
+    function handleCredentialResponse(response) {
+        if (response.access_token) {
+            isAuthenticated = true;
+            localStorage.setItem('googleToken', response.access_token);
+            const expiresInMs = (response.expires_in || 3600) * 1000;
+            localStorage.setItem('googleTokenExpiry', String(Date.now() + expiresInMs - 30000));
+            updateAuthUI();
+        } else {
+            console.error('Resposta sem access_token:', response);
+            setGlobalSyncStatus('error', '❌ Erro na autenticação.');
+        }
+    }
+
+    function updateAuthUI() {
+        if (isAuthenticated) {
+            document.getElementById('connectBtn').textContent = '🔓 Desconectar';
+            document.getElementById('syncBtn').disabled = false;
+            document.getElementById('desyncBtn').disabled = false;
+            document.getElementById('userInfo').textContent = '✅ Conectado com Google';
+            updateGlobalStatus();
+        } else {
+            document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
+            document.getElementById('syncBtn').disabled = true;
+            document.getElementById('desyncBtn').disabled = true;
+            document.getElementById('userInfo').textContent = '';
+            setGlobalSyncStatus('disconnected', '🔴 Desconectado');
+        }
+    }
+
+    function getValidToken() {
+        const token = localStorage.getItem('googleToken');
+        const expiry = parseInt(localStorage.getItem('googleTokenExpiry') || '0', 10);
+        if (!token || Date.now() >= expiry) return null;
+        return token;
+    }
+
+    function forceReauth() {
+        isAuthenticated = false;
+        localStorage.removeItem('googleToken');
+        localStorage.removeItem('googleTokenExpiry');
+        updateAuthUI();
+        setGlobalSyncStatus('error', '⚠️ Sessão expirada, reconecte');
+        if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
+    }
+
+    // ===================================================================
+    // SINCRONIZAÇÃO
+    // ===================================================================
+    function generateValidEventId(date, time) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth()+1).padStart(2,'0');
+        const day = String(date.getDate()).padStart(2,'0');
+        const [hour, minute] = time.split(':');
+        return `c${year}${month}${day}t${hour}${minute}`;
+    }
+
+    function getAllActivitiesFromSchedule() {
+        const activities = [];
+        const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
+        days.forEach(day => {
+            const table = document.getElementById(day+'-table');
+            if (!table) return;
+            const rows = table.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                if (index === 0) return;
+                const timeCell = row.querySelector('.time');
+                const activityCell = row.querySelector('.activity-cell');
+                if (timeCell && activityCell) {
+                    const duration = parseInt(activityCell.dataset.duration) || 60;
+                    const period = activityCell.dataset.period || 'semanal';
+                    const reminder = parseInt(activityCell.dataset.reminder) || 0;
+                    activities.push({
+                        day: day,
+                        time: timeCell.dataset.time,
+                        activity: activityCell.dataset.activity,
+                        duration: duration,
+                        period: period,
+                        reminder: reminder,
+                        syncStatus: activityCell.dataset.syncStatus || 'pending',
+                        cell: activityCell,
+                        semanas: JSON.parse(activityCell.dataset.semanas || '[1,3]'),
+                        mensalTipo: activityCell.dataset.mensalTipo || 'dia',
+                        diaMes: parseInt(activityCell.dataset.diaMes) || 1,
+                        ocorrencia: parseInt(activityCell.dataset.ocorrencia) || 1,
+                        diaSemana: parseInt(activityCell.dataset.diaSemana) || 0
+                    });
+                }
+            });
+        });
+        return activities;
+    }
+
+    function createCalendarEvent(activity, date) {
+        const [hour, minute] = activity.time.split(':');
+        const start = new Date(date);
+        start.setHours(parseInt(hour), parseInt(minute), 0, 0);
+        const end = new Date(date);
+        const duration = activity.duration || 60;
+        end.setHours(parseInt(hour), parseInt(minute) + duration, 0, 0);
+        
+        let reminderMinutes = activity.reminder || 0;
+        if (reminderMinutes === 0) {
+            const global = getReminderSettings();
+            if (global.enabled) reminderMinutes = global.minutes;
+        }
+        const event = {
+            summary: activity.activity,
+            description: `Atividade do cronograma: ${activity.activity} (${duration}min)`,
+            start: { dateTime: start.toISOString(), timeZone: 'America/Sao_Paulo' },
+            end: { dateTime: end.toISOString(), timeZone: 'America/Sao_Paulo' }
+        };
+        if (reminderMinutes > 0) {
+            event.reminders = {
+                useDefault: false,
+                overrides: [{ method: 'popup', minutes: reminderMinutes }]
+            };
+        } else {
+            event.reminders = { useDefault: false, overrides: [] };
+        }
+        return event;
+    }
+
+    async function syncWithGoogleCalendar() {
+        if (isSyncing) { alert('⚠️ Sincronização em andamento.'); return; }
+        const token = getValidToken();
+        if (!token) { forceReauth(); return; }
+
+        const pending = getPendingActivities();
+        if (pending.length === 0) {
+            alert('✅ Nenhuma atividade pendente para sincronizar.');
+            return;
+        }
+
+        isSyncing = true;
+        setButtonsEnabled(false);
+        showProgress(`⏳ Sincronizando ${pending.length} atividade${pending.length > 1 ? 's' : ''}...`);
+        setGlobalSyncStatus('syncing', `🔄 Sincronizando ${pending.length}...`);
+
+        try {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const startDay = today.getDate();
+            const totalDays = daysInMonth - startDay + 1;
+            let successCount = 0, errorCount = 0, authFailed = false;
+            const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+
+            const pendingByDay = {};
+            pending.forEach(p => {
+                if (!pendingByDay[p.day]) pendingByDay[p.day] = [];
+                pendingByDay[p.day].push(p);
+            });
+
+            let processedDays = 0;
+            for (let d = startDay; d <= daysInMonth && !authFailed; d++) {
+                const date = new Date(year, month, d);
+                const dayName = dayNames[date.getDay()];
+                const dayPendings = pendingByDay[dayName] || [];
+                for (let activity of dayPendings) {
+                    const activityObj = {
+                        period: activity.period || 'semanal',
+                        semanas: activity.semanas || [1,3],
+                        mensalTipo: activity.mensalTipo || 'dia',
+                        diaMes: activity.diaMes || 1,
+                        ocorrencia: activity.ocorrencia || 1,
+                        diaSemana: activity.diaSemana || 0
+                    };
+                    if (!activityOccursToday(activityObj, date)) {
+                        activity.cell.dataset.syncStatus = 'synced';
+                        const indicator = activity.cell.querySelector('.sync-indicator');
+                        if (indicator) indicator.className = 'sync-indicator synced';
+                        successCount++;
+                        continue;
+                    }
+
+                    const event = createCalendarEvent(activity, date);
+                    const eventId = generateValidEventId(date, activity.time);
+                    try {
+                        const dayStart = new Date(date);
+                        dayStart.setHours(0,0,0,0);
+                        const dayEnd = new Date(date);
+                        dayEnd.setHours(23,59,59,999);
+                        const searchRes = await fetch(
+                            `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${dayStart.toISOString()}&timeMax=${dayEnd.toISOString()}&q=${encodeURIComponent(activity.activity)}`,
+                            { headers: { 'Authorization': `Bearer ${token}` } }
+                        );
+                        if (searchRes.status === 401) { authFailed = true; break; }
+                        const searchData = await searchRes.json();
+                        let exists = false;
+                        if (searchData.items) {
+                            for (let ev of searchData.items) {
+                                if (ev.summary && ev.summary.toLowerCase().trim() === activity.activity.toLowerCase().trim()) {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (exists) {
+                            activity.cell.dataset.syncStatus = 'synced';
+                            const indicator = activity.cell.querySelector('.sync-indicator');
+                            if (indicator) indicator.className = 'sync-indicator synced';
+                            successCount++;
+                            continue;
+                        }
+
+                        const updateRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+                            method: 'PUT',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify(event)
+                        });
+                        if (updateRes.status === 401) { authFailed = true; break; }
+                        if (updateRes.status === 404) {
+                            event.id = eventId;
+                            const insertRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify(event)
+                            });
+                            if (insertRes.status === 401) { authFailed = true; break; }
+                            if (insertRes.ok) {
+                                successCount++;
+                                activity.cell.dataset.syncStatus = 'synced';
+                                const indicator = activity.cell.querySelector('.sync-indicator');
+                                if (indicator) indicator.className = 'sync-indicator synced';
+                            } else errorCount++;
+                        } else if (updateRes.ok) {
+                            successCount++;
+                            activity.cell.dataset.syncStatus = 'synced';
+                            const indicator = activity.cell.querySelector('.sync-indicator');
+                            if (indicator) indicator.className = 'sync-indicator synced';
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (err) { errorCount++; }
+                }
+                processedDays++;
+                updateProgress(processedDays, totalDays);
+            }
+
+            if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
+
+            saveScheduleToStorage();
+            updateGlobalStatus();
+            const msg = `✅ ${successCount} atividade${successCount > 1 ? 's' : ''} sincronizada${successCount > 1 ? 's' : ''}` +
+                        (errorCount > 0 ? ` (${errorCount} falhas)` : '');
+            setGlobalSyncStatus('synced', msg);
+            setTimeout(() => updateGlobalStatus(), 3000);
+        } catch (error) {
+            setGlobalSyncStatus('error', '❌ Erro: ' + error.message);
+        } finally {
+            hideProgress();
+            isSyncing = false;
+            setButtonsEnabled(true);
+        }
+    }
+
+    async function desyncNow() {
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
+        const token = getValidToken();
+        if (!token) { forceReauth(); return; }
+        if (!confirm('⚠️ Remover todos os eventos do Google Calendar a partir de hoje?')) return;
+        isSyncing = true;
+        setButtonsEnabled(false);
+        showProgress('⏳ Dessincronizando...');
+        setGlobalSyncStatus('syncing', '🔄 Dessincronizando...');
+        try {
+            const activities = getAllActivitiesFromSchedule();
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const startDay = today.getDate();
+            const totalDays = daysInMonth - startDay + 1;
+            let processedDays = 0, deletedCount = 0, authFailed = false;
+            const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+            for (let d = startDay; d <= daysInMonth && !authFailed; d++) {
+                const date = new Date(year, month, d);
+                const dayName = dayNames[date.getDay()];
+                const dayActivities = activities.filter(a => a.day === dayName);
+                for (let activity of dayActivities) {
+                    const activityObj = {
+                        period: activity.period || 'semanal',
+                        semanas: activity.semanas || [1,3],
+                        mensalTipo: activity.mensalTipo || 'dia',
+                        diaMes: activity.diaMes || 1,
+                        ocorrencia: activity.ocorrencia || 1,
+                        diaSemana: activity.diaSemana || 0
+                    };
+                    if (!activityOccursToday(activityObj, date)) continue;
+                    const eventId = generateValidEventId(date, activity.time);
+                    try {
+                        const delRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (delRes.status === 401) { authFailed = true; break; }
+                        if (delRes.ok || delRes.status === 404) deletedCount++;
+                    } catch (err) {}
+                }
+                processedDays++;
+                updateProgress(processedDays, totalDays);
+            }
+            if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
+            markAllActivitiesAsPending();
+            saveScheduleToStorage();
+            alert(`✅ ${deletedCount} eventos removidos.`);
+            setGlobalSyncStatus('pending', `⏳ ${deletedCount} removidos, pendentes`);
+            setTimeout(() => updateGlobalStatus(), 3000);
+        } catch (error) {
+            setGlobalSyncStatus('error', '❌ Erro: ' + error.message);
+        } finally {
+            hideProgress();
+            isSyncing = false;
+            setButtonsEnabled(true);
+        }
+    }
+
+    function syncNow() {
+        if (getValidToken()) syncWithGoogleCalendar();
+        else forceReauth();
+    }
+
+    function setButtonsEnabled(enabled) {
+        document.getElementById('syncBtn').disabled = !(enabled && isAuthenticated);
+        document.getElementById('desyncBtn').disabled = !(enabled && isAuthenticated);
+    }
+
+    function showProgress(message) {
+        document.getElementById('progressContainer').classList.add('active');
+        document.getElementById('progressMessage').textContent = message || '⏳ Sincronizando...';
+        setGlobalSyncStatus('syncing', '🔄 Sincronizando...');
+    }
+    function updateProgress(current, total) {
+        const pct = Math.min(100, Math.round((current / total) * 100));
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressPercent').textContent = pct + '%';
+    }
+    function hideProgress() {
+        document.getElementById('progressContainer').classList.remove('active');
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('progressPercent').textContent = '0%';
+    }
+
+    // ===================================================================
+    // TABS
+    // ===================================================================
     window.switchTab = function(day, event) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById(day).classList.add('active');
         if (event) event.target.classList.add('active');
-        // Aplica o filtro de periodicidade
         filterActivitiesByDate(day);
         updateImportantBox(day);
     };
 
     // ===================================================================
-    // SINCRONIZAÇÃO (respeitando periodicidade)
-    // ===================================================================
-    // Modificar a função syncWithGoogleCalendar para só sincronizar atividades que ocorrem hoje
-    // (ou seja, aplicar o mesmo filtro antes de enviar)
-    // ===================================================================
-
-    // ===================================================================
     // INICIALIZAÇÃO
     // ===================================================================
     window.addEventListener('load', function() {
+        loadReminderSettings();
         loadGlobalStatusFromStorage();
         const hasSaved = loadScheduleFromStorage();
         attachTimeClickHandlers();
         initializeGoogleAuth();
-        updateMonthInfo();
+        updateWeekDisplay();
         const activeTab = document.querySelector('.tab-content.active');
         if (activeTab) {
             filterActivitiesByDate(activeTab.id);
             updateImportantBox(activeTab.id);
         }
         updateGlobalStatus();
-        // Adiciona os ouvintes de evento para os modais
-        document.getElementById('addModal').addEventListener('shown.bs.modal', function() {
-            renderPeriodOptions('addPeriodContainer', 'semanal', {});
-        });
     });
 
-    // ===================================================================
-    // FUNÇÕES DE EMOJI E IMPORTANT BOX (mantidas)
-    // ===================================================================
-    // (As funções containsEmoji, updateImportantBox, updateAllImportantBoxes
-    // permanecem as mesmas do código original)
-    // ===================================================================
+    window.addEventListener('click', function(e) {
+        if (e.target === document.getElementById('noteModal')) closeModal();
+        if (e.target === document.getElementById('addModal')) closeAddModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { 
+            closeModal(); 
+            closeAddModal();
+            closeEmojiPicker();
+        }
+    });
 
-    // ===================================================================
-    // FUNÇÕES DE AUTENTICAÇÃO E SINCRONIZAÇÃO (mantidas, com pequenos ajustes)
-    // ===================================================================
-    // (As funções handleConnectClick, initializeGoogleAuth, handleAuthError,
-    // handleCredentialResponse, updateAuthUI, updateMonthInfo, getValidToken,
-    // forceReauth, syncNow, desyncNow, syncWithGoogleCalendar, etc.
-    // permanecem praticamente as mesmas, com a adição do filtro de periodicidade
-    // no loop de sincronização)
-    // ===================================================================
-
-    // Nota: Para o código final completo, todas as funções mencionadas acima
-    // serão incluídas integralmente. Esta é uma versão resumida para demonstrar
-    // as adições principais.
+    function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
+    function closeModal() { document.getElementById('noteModal').classList.remove('show'); }
 </script>
 </body>
 </html>
