@@ -1051,6 +1051,7 @@
     const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
     const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
     const STORAGE_KEY = 'weeklyScheduleData';
+    const DELETED_KEY = 'deletedEvents';
     const SYNC_STATUS_KEY = 'syncStatus';
     const REMINDER_KEY = 'reminderSettings';
 
@@ -1060,6 +1061,29 @@
     let globalSyncStatus = 'disconnected';
     let currentWeekOffset = 0;
     let importDone = false;
+
+    // ===================================================================
+    // LISTA DE EVENTOS DELETADOS (local)
+    // ===================================================================
+    function getDeletedEvents() {
+        const saved = localStorage.getItem(DELETED_KEY);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch(e) { return []; }
+        }
+        return [];
+    }
+
+    function addDeletedEvent(day, time, eventId) {
+        const deleted = getDeletedEvents();
+        deleted.push({ day, time, eventId });
+        localStorage.setItem(DELETED_KEY, JSON.stringify(deleted));
+    }
+
+    function clearDeletedEvents() {
+        localStorage.removeItem(DELETED_KEY);
+    }
 
     // ===================================================================
     // LEMBRETE GLOBAL
@@ -1261,7 +1285,7 @@
     }
 
     // ===================================================================
-    // EMOJI PICKER
+    // EMOJI PICKER (resumido)
     // ===================================================================
     const EMOJIS = {
         '😀':'Smileys','😁':'Smileys','😂':'Smileys','🤣':'Smileys','😃':'Smileys','😄':'Smileys','😅':'Smileys','😆':'Smileys','😉':'Smileys','😊':'Smileys','😋':'Smileys','😎':'Smileys','😍':'Smileys','🥰':'Smileys','😘':'Smileys','😗':'Smileys','😙':'Smileys','😚':'Smileys','🥲':'Smileys','😜':'Smileys','😝':'Smileys','😛':'Smileys','🤑':'Smileys','🤓':'Smileys','😈':'Smileys','👿':'Smileys','👹':'Smileys','👺':'Smileys','💀':'Smileys','👻':'Smileys','👽':'Smileys','🤖':'Smileys','💩':'Smileys','😺':'Smileys','😸':'Smileys','😻':'Smileys','😽':'Smileys','🙀':'Smileys','🙈':'Smileys','🙉':'Smileys','🙊':'Smileys',
@@ -1617,7 +1641,7 @@
     }
 
     // ===================================================================
-    // EDIÇÃO
+    // EDIÇÃO (mantida)
     // ===================================================================
     function openEditModal(day, time, activity, duration, period, reminder, data, event) {
         event.stopPropagation();
@@ -1846,13 +1870,19 @@
     }
 
     // ===================================================================
-    // DELETE E EDIÇÃO DE HORÁRIO
+    // DELETE (com armazenamento para exclusão automática)
     // ===================================================================
     function deleteActivity(day, cellElement, event) {
         event.stopPropagation();
         if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         if (confirm('Deletar esta atividade?')) {
-            cellElement.closest('tr').remove();
+            const row = cellElement.closest('tr');
+            const timeCell = row.querySelector('.time');
+            const time = timeCell.dataset.time;
+            // Armazena o evento para deletar no Google Calendar
+            // O ID do evento é gerado a partir da data e horário, mas precisamos do dia e horário
+            addDeletedEvent(day, time, ''); // eventId será gerado na sincronização
+            row.remove();
             saveScheduleToStorage();
             updateGlobalStatus();
             updateImportantBox(day);
@@ -1861,6 +1891,9 @@
         }
     }
 
+    // ===================================================================
+    // EDIÇÃO DE HORÁRIO (mantida)
+    // ===================================================================
     function editTime(day, element, currentTime) {
         if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const newTime = prompt('Editar horário (HH:MM):', currentTime);
@@ -1942,7 +1975,7 @@
     }
 
     // ===================================================================
-    // PERSISTÊNCIA
+    // PERSISTÊNCIA (com exclusão de eventos deletados)
     // ===================================================================
     function saveScheduleToStorage() {
         const schedule = {};
@@ -2062,13 +2095,14 @@
             table.appendChild(header);
         });
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(DELETED_KEY); // também limpa a lista de deletados
         updateAllImportantBoxes();
         updateGlobalStatus();
         alert('✅ Todas as atividades foram removidas.');
     }
 
     // ===================================================================
-    // MODELO DE ROTINA (corrigido e completo)
+    // MODELO DE ROTINA (completo)
     // ===================================================================
     const DEFAULT_ROUTINE = {
         segunda: [
@@ -2180,9 +2214,6 @@
         ]
     };
 
-    // ===================================================================
-    // CARREGAR MODELO (corrigido e completo)
-    // ===================================================================
     function loadRoutineModel() {
         console.log('Carregar modelo acionado');
         if (isSyncing) { alert('⚠️ Aguarde a sincronização atual.'); return; }
@@ -2237,7 +2268,7 @@
     }
 
     // ===================================================================
-    // IMPORTAÇÃO AUTOMÁTICA (apenas eventos do sistema, mês atual + próximo mês)
+    // IMPORTAÇÃO AUTOMÁTICA (eventos do mês atual)
     // ===================================================================
     async function importFromGoogle() {
         if (importDone) return;
@@ -2246,7 +2277,7 @@
 
         const now = new Date();
         const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
         setGlobalSyncStatus('syncing', '⏳ Importando eventos do Google...');
         showProgress(`⏳ Importando eventos de ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}...`);
@@ -2432,13 +2463,39 @@
     }
 
     // ===================================================================
-    // SINCRONIZAÇÃO (CORRIGIDA PARA ATIVIDADES MENSAIS COM DIA FIXO)
+    // SINCRONIZAÇÃO (corrigida: apenas futuros, mensal 6 meses, deleta pendentes)
     // ===================================================================
     async function syncWithGoogleCalendar() {
         if (isSyncing) { alert('⚠️ Sincronização em andamento.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
 
+        // 1. Processar eventos deletados
+        const deleted = getDeletedEvents();
+        if (deleted.length > 0) {
+            // Deletar no Google Calendar
+            for (let del of deleted) {
+                // Gerar o eventId a partir do dia e horário
+                // Precisamos encontrar a data correspondente ao dia da semana
+                const dayMap = { 'segunda':1, 'terca':2, 'quarta':3, 'quinta':4, 'sexta':5, 'sabado':6, 'domingo':0 };
+                const dayIndex = dayMap[del.day];
+                const now = new Date();
+                const startOfWeek = getStartOfWeek(0);
+                const date = new Date(startOfWeek);
+                date.setDate(startOfWeek.getDate() + (dayIndex - 1) % 7);
+                if (dayIndex === 0) date.setDate(startOfWeek.getDate() + 6);
+                const eventId = generateValidEventId(date, del.time);
+                try {
+                    await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                } catch(e) {}
+            }
+            clearDeletedEvents();
+        }
+
+        // 2. Processar atividades pendentes
         const pending = getPendingActivities();
         if (pending.length === 0) {
             alert('✅ Nenhuma atividade pendente para sincronizar.');
@@ -2451,14 +2508,14 @@
         setGlobalSyncStatus('syncing', `🔄 Sincronizando ${pending.length}...`);
 
         try {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = today.getMonth();
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const today = now.getDate();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const startDay = 1;
-            const totalDays = daysInMonth;
+
             let successCount = 0, errorCount = 0, authFailed = false;
-            const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+            let processed = 0;
 
             for (let activity of pending) {
                 const activityObj = {
@@ -2470,62 +2527,130 @@
                     diaSemana: activity.diaSemana || 0
                 };
 
-                for (let d = 1; d <= daysInMonth && !authFailed; d++) {
-                    const date = new Date(year, month, d);
-                    if (!activityOccursToday(activityObj, date)) continue;
+                // Determina o período de datas a sincronizar
+                let startYear = year, startMonth = month, startDay = today;
+                let endYear = year, endMonth = month + 5, endDay = 1; // 6 meses
 
-                    const dayStart = new Date(date);
-                    dayStart.setHours(0,0,0,0);
-                    const dayEnd = new Date(date);
-                    dayEnd.setHours(23,59,59,999);
-                    try {
-                        const searchRes = await fetch(
-                            `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${dayStart.toISOString()}&timeMax=${dayEnd.toISOString()}&q=${encodeURIComponent(activity.activity)}`,
-                            { headers: { 'Authorization': `Bearer ${token}` } }
-                        );
-                        if (searchRes.status === 401) { authFailed = true; break; }
-                        const searchData = await searchRes.json();
-                        let exists = false;
-                        if (searchData.items) {
-                            for (let ev of searchData.items) {
-                                if (ev.summary && ev.summary.toLowerCase().trim() === activity.activity.toLowerCase().trim()) {
-                                    exists = true;
-                                    break;
+                if (activity.period === 'mensal') {
+                    // Para mensais, sincronizar os próximos 6 meses
+                    // Vamos iterar sobre os meses
+                    for (let m = 0; m < 6; m++) {
+                        const currentDate = new Date(year, month + m, 1);
+                        const lastDay = new Date(year, month + m + 1, 0).getDate();
+                        for (let d = 1; d <= lastDay; d++) {
+                            const date = new Date(year, month + m, d);
+                            // Pular dias passados (se for o mês atual e dia < today)
+                            if (m === 0 && d < today) continue;
+                            if (!activityOccursToday(activityObj, date)) continue;
+                            // Verificar duplicata e criar
+                            const event = createCalendarEvent(activity, date);
+                            const eventId = generateValidEventId(date, activity.time);
+                            try {
+                                const dayStart = new Date(date);
+                                dayStart.setHours(0,0,0,0);
+                                const dayEnd = new Date(date);
+                                dayEnd.setHours(23,59,59,999);
+                                const searchRes = await fetch(
+                                    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${dayStart.toISOString()}&timeMax=${dayEnd.toISOString()}&q=${encodeURIComponent(activity.activity)}`,
+                                    { headers: { 'Authorization': `Bearer ${token}` } }
+                                );
+                                if (searchRes.status === 401) { authFailed = true; break; }
+                                const searchData = await searchRes.json();
+                                let exists = false;
+                                if (searchData.items) {
+                                    for (let ev of searchData.items) {
+                                        if (ev.summary && ev.summary.toLowerCase().trim() === activity.activity.toLowerCase().trim()) {
+                                            exists = true;
+                                            break;
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                        if (exists) continue;
+                                if (exists) continue;
 
+                                const updateRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+                                    method: 'PUT',
+                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(event)
+                                });
+                                if (updateRes.status === 401) { authFailed = true; break; }
+                                if (updateRes.status === 404) {
+                                    event.id = eventId;
+                                    const insertRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                                        method: 'POST',
+                                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(event)
+                                    });
+                                    if (insertRes.status === 401) { authFailed = true; break; }
+                                    if (insertRes.ok) successCount++;
+                                    else errorCount++;
+                                } else if (updateRes.ok) {
+                                    successCount++;
+                                } else {
+                                    errorCount++;
+                                }
+                            } catch (err) { errorCount++; }
+                        }
+                        if (authFailed) break;
+                    }
+                } else {
+                    // Para semanais e quinzenais, sincronizar do dia atual até o fim do mês
+                    for (let d = today; d <= daysInMonth && !authFailed; d++) {
+                        const date = new Date(year, month, d);
+                        if (!activityOccursToday(activityObj, date)) continue;
                         const event = createCalendarEvent(activity, date);
                         const eventId = generateValidEventId(date, activity.time);
-                        const updateRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
-                            method: 'PUT',
-                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify(event)
-                        });
-                        if (updateRes.status === 401) { authFailed = true; break; }
-                        if (updateRes.status === 404) {
-                            event.id = eventId;
-                            const insertRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-                                method: 'POST',
+                        try {
+                            const dayStart = new Date(date);
+                            dayStart.setHours(0,0,0,0);
+                            const dayEnd = new Date(date);
+                            dayEnd.setHours(23,59,59,999);
+                            const searchRes = await fetch(
+                                `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${dayStart.toISOString()}&timeMax=${dayEnd.toISOString()}&q=${encodeURIComponent(activity.activity)}`,
+                                { headers: { 'Authorization': `Bearer ${token}` } }
+                            );
+                            if (searchRes.status === 401) { authFailed = true; break; }
+                            const searchData = await searchRes.json();
+                            let exists = false;
+                            if (searchData.items) {
+                                for (let ev of searchData.items) {
+                                    if (ev.summary && ev.summary.toLowerCase().trim() === activity.activity.toLowerCase().trim()) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (exists) continue;
+
+                            const updateRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+                                method: 'PUT',
                                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                 body: JSON.stringify(event)
                             });
-                            if (insertRes.status === 401) { authFailed = true; break; }
-                            if (insertRes.ok) successCount++;
-                            else errorCount++;
-                        } else if (updateRes.ok) {
-                            successCount++;
-                        } else {
-                            errorCount++;
-                        }
-                    } catch (err) { errorCount++; }
+                            if (updateRes.status === 401) { authFailed = true; break; }
+                            if (updateRes.status === 404) {
+                                event.id = eventId;
+                                const insertRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(event)
+                                });
+                                if (insertRes.status === 401) { authFailed = true; break; }
+                                if (insertRes.ok) successCount++;
+                                else errorCount++;
+                            } else if (updateRes.ok) {
+                                successCount++;
+                            } else {
+                                errorCount++;
+                            }
+                        } catch (err) { errorCount++; }
+                    }
                 }
+
                 activity.cell.dataset.syncStatus = 'synced';
                 const indicator = activity.cell.querySelector('.sync-indicator');
                 if (indicator) indicator.className = 'sync-indicator synced';
-                const idx = pending.indexOf(activity);
-                updateProgress(idx + 1, pending.length);
+                processed++;
+                updateProgress(processed, pending.length);
             }
 
             if (authFailed) { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
@@ -2591,6 +2716,7 @@
     }
 
     function getAllActivitiesFromSchedule() {
+        // Para uso em outras funções (opcional)
         const activities = [];
         const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
         days.forEach(day => {
