@@ -1261,7 +1261,7 @@
     }
 
     // ===================================================================
-    // EMOJI PICKER (resumido)
+    // EMOJI PICKER
     // ===================================================================
     const EMOJIS = {
         '😀':'Smileys','😁':'Smileys','😂':'Smileys','🤣':'Smileys','😃':'Smileys','😄':'Smileys','😅':'Smileys','😆':'Smileys','😉':'Smileys','😊':'Smileys','😋':'Smileys','😎':'Smileys','😍':'Smileys','🥰':'Smileys','😘':'Smileys','😗':'Smileys','😙':'Smileys','😚':'Smileys','🥲':'Smileys','😜':'Smileys','😝':'Smileys','😛':'Smileys','🤑':'Smileys','🤓':'Smileys','😈':'Smileys','👿':'Smileys','👹':'Smileys','👺':'Smileys','💀':'Smileys','👻':'Smileys','👽':'Smileys','🤖':'Smileys','💩':'Smileys','😺':'Smileys','😸':'Smileys','😻':'Smileys','😽':'Smileys','🙀':'Smileys','🙈':'Smileys','🙉':'Smileys','🙊':'Smileys',
@@ -1717,7 +1717,7 @@
     }
 
     // ===================================================================
-    // NOVA ATIVIDADE
+    // NOVA ATIVIDADE (com correção para mensal com dia fixo)
     // ===================================================================
     function openAddModal() {
         document.getElementById('newActivityName').value = '';
@@ -1755,14 +1755,19 @@
         const time = document.getElementById('newActivityTime').value;
         const duration = parseInt(document.getElementById('newActivityDuration').value) || 60;
         const reminder = parseInt(document.getElementById('newActivityReminder').value) || 0;
-        const selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
         const periodData = getPeriodData('addPeriodContainer');
         
         if (!name) { alert('Informe o nome da atividade.'); return; }
-        if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido.'); return; }
+        if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido (HH:MM).'); return; }
         if (duration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (reminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
-        if (!(periodData && periodData.period === 'mensal' && periodData.mensalTipo === 'dia')) {
+
+        // ===== CORREÇÃO: Para mensal com dia fixo, seleciona automaticamente todos os dias da semana =====
+        let selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
+        if (periodData && periodData.period === 'mensal' && periodData.mensalTipo === 'dia') {
+            // Se for mensal com dia fixo, seleciona todos os dias da semana
+            selectedDays = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+        } else {
             if (selectedDays.length === 0) {
                 alert('Selecione pelo menos um dia da semana.');
                 return;
@@ -1837,6 +1842,7 @@
         updateGlobalStatus();
         const activeTab = document.querySelector('.tab-content.active');
         if (activeTab) filterActivitiesByDate(activeTab.id);
+        alert('✅ Atividade adicionada! Ela aparecerá no(s) dia(s) correspondente(s) de acordo com sua periodicidade.');
     }
 
     // ===================================================================
@@ -2062,14 +2068,172 @@
     }
 
     // ===================================================================
-    // MODELO DE ROTINA
+    // MODELO DE ROTINA (corrigido e completo)
     // ===================================================================
     const DEFAULT_ROUTINE = {
-        // ... (mesmo modelo do código anterior)
+        segunda: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "18:45", activity: "🧺 Transferir roupas", duration: 30, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        terca: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "09:40", activity: "🧼 Colocar toalhas e tapetinhos", duration: 20, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "18:45", activity: "🧼 Pendurar toalhas e tapetinhos", duration: 30, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        quarta: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "15:00", activity: "🧹 Limpeza completa do piso", duration: 60, period: "semanal" },
+            { time: "16:00", activity: "🐱 Troca completa da areia dos gatos", duration: 45, period: "semanal" },
+            { time: "16:45", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        quinta: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "09:40", activity: "🧺 Colocar roupas na máquina", duration: 20, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "18:45", activity: "🧺 Transferir roupas", duration: 30, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        sexta: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "10:15", activity: "Busca por emprego", duration: 120, period: "semanal" },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Limpeza da caixa de areia", duration: 30, period: "semanal" },
+            { time: "15:00", activity: "🛏️ Organização do quarto", duration: 45, period: "semanal" },
+            { time: "16:00", activity: "🌿 Limpeza da varanda", duration: 45, period: "semanal" },
+            { time: "16:45", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        sabado: [
+            { time: "08:00", activity: "Acordar, banho e escovar os dentes", duration: 30, period: "semanal" },
+            { time: "08:30", activity: "Ioga e meditação", duration: 60, period: "semanal" },
+            { time: "09:30", activity: "Café da manhã", duration: 30, period: "semanal" },
+            { time: "10:00", activity: "🛏️ Trocar lençóis", duration: 30, period: "quinzenal", semanas: [1,3] },
+            { time: "10:30", activity: "🧺 Toalhas de rosto e banho", duration: 30, period: "quinzenal", semanas: [2,4] },
+            { time: "11:00", activity: "❄️ Descongelar geladeira e limpar por dentro", duration: 45, period: "quinzenal", semanas: [1,3] },
+            { time: "11:30", activity: "🐱 Trocar toda a areia da caixa de areia dos gatos", duration: 30, period: "quinzenal", semanas: [2,4] },
+            { time: "12:15", activity: "Almoço", duration: 60, period: "semanal" },
+            { time: "13:00", activity: "🚿 Faxina pesada do banheiro", duration: 90, period: "semanal" },
+            { time: "14:30", activity: "🐱 Limpeza do quartinho dos gatos", duration: 45, period: "semanal" },
+            { time: "15:15", activity: "🧺 Lavar roupa de cama e tapete do quarto", duration: 30, period: "quinzenal", semanas: [1,3] },
+            { time: "16:00", activity: "Exercício físico", duration: 60, period: "semanal" },
+            { time: "17:00", activity: "Estudos", duration: 90, period: "semanal" },
+            { time: "19:00", activity: "Jantar", duration: 60, period: "semanal" },
+            { time: "20:00", activity: "Leitura", duration: 30, period: "semanal" },
+            { time: "20:30", activity: "Lazer", duration: 60, period: "semanal" },
+            { time: "21:30", activity: "Arrumação", duration: 30, period: "semanal" }
+        ],
+        domingo: [
+            { time: "09:00", activity: "🍳 Preparo das refeições da semana", duration: 120, period: "semanal" },
+            { time: "09:00", activity: "💰 Contas a pagar", duration: 30, period: "mensal", mensalTipo: "dia", diaMes: 1 },
+            { time: "09:30", activity: "🧹 Lavar tapete do quarto", duration: 30, period: "mensal", mensalTipo: "ocorrencia", ocorrencia: 2, diaSemana: 6 },
+            { time: "10:00", activity: "📆 Organizar armários e gavetas", duration: 60, period: "mensal", mensalTipo: "ocorrencia", ocorrencia: 3, diaSemana: 0 },
+            { time: "12:00", activity: "Congelamento das refeições", duration: 60, period: "semanal" },
+            { time: "14:00", activity: "Resto do dia livre", duration: 0, period: "semanal" }
+        ]
     };
 
+    // ===================================================================
+    // CARREGAR MODELO (corrigido e completo)
+    // ===================================================================
     function loadRoutineModel() {
-        // ... (mesmo código do envio anterior)
+        console.log('Carregar modelo acionado');
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização atual.'); return; }
+        if (!confirm('⚠️ Substituir atividades pelo modelo padrão?')) return;
+        const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
+        days.forEach(day => {
+            const table = document.getElementById(day+'-table');
+            if (!table) return;
+            const header = table.querySelector('tr');
+            table.innerHTML = '';
+            table.appendChild(header);
+            (DEFAULT_ROUTINE[day] || []).forEach(item => {
+                const duration = item.duration || 60;
+                const period = item.period || 'semanal';
+                const reminder = item.reminder || 0;
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time';
+                timeCell.dataset.time = item.time;
+                timeCell.textContent = item.time;
+                timeCell.addEventListener('click', () => { editTime(day, timeCell, item.time); });
+                const activityCell = document.createElement('td');
+                activityCell.className = 'activity-cell';
+                activityCell.dataset.activity = item.activity;
+                activityCell.dataset.duration = duration;
+                activityCell.dataset.period = period;
+                activityCell.dataset.reminder = reminder;
+                if (period === 'quinzenal') {
+                    activityCell.dataset.semanas = JSON.stringify(item.semanas || [1,3]);
+                } else if (period === 'mensal') {
+                    activityCell.dataset.mensalTipo = item.mensalTipo || 'dia';
+                    if (item.mensalTipo === 'dia') {
+                        activityCell.dataset.diaMes = item.diaMes || 1;
+                    } else {
+                        activityCell.dataset.ocorrencia = item.ocorrencia || 1;
+                        activityCell.dataset.diaSemana = item.diaSemana || 0;
+                    }
+                }
+                activityCell.dataset.syncStatus = 'pending';
+                row.appendChild(timeCell);
+                row.appendChild(activityCell);
+                table.appendChild(row);
+                renderActivityCell(activityCell);
+            });
+        });
+        saveScheduleToStorage();
+        updateAllImportantBoxes();
+        updateGlobalStatus();
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) filterActivitiesByDate(activeTab.id);
+        alert('✅ Rotina modelo carregada!');
     }
 
     // ===================================================================
@@ -2291,14 +2455,12 @@
             const year = today.getFullYear();
             const month = today.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const startDay = 1; // começa do dia 1 do mês
+            const startDay = 1;
             const totalDays = daysInMonth;
             let successCount = 0, errorCount = 0, authFailed = false;
             const dayNames = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 
-            // Para cada atividade pendente, verificar todos os dias do mês
             for (let activity of pending) {
-                // Monta objeto de periodicidade
                 const activityObj = {
                     period: activity.period || 'semanal',
                     semanas: activity.semanas || [1,3],
@@ -2308,13 +2470,10 @@
                     diaSemana: activity.diaSemana || 0
                 };
 
-                // Itera sobre todos os dias do mês
                 for (let d = 1; d <= daysInMonth && !authFailed; d++) {
                     const date = new Date(year, month, d);
-                    // Verifica se a atividade ocorre neste dia
                     if (!activityOccursToday(activityObj, date)) continue;
 
-                    // Verifica se já existe evento no Google com o mesmo título neste dia
                     const dayStart = new Date(date);
                     dayStart.setHours(0,0,0,0);
                     const dayEnd = new Date(date);
@@ -2335,9 +2494,8 @@
                                 }
                             }
                         }
-                        if (exists) continue; // já existe, não cria duplicata
+                        if (exists) continue;
 
-                        // Cria o evento
                         const event = createCalendarEvent(activity, date);
                         const eventId = generateValidEventId(date, activity.time);
                         const updateRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
@@ -2363,11 +2521,9 @@
                         }
                     } catch (err) { errorCount++; }
                 }
-                // Marca a atividade como sincronizada (independente de ter criado eventos ou não)
                 activity.cell.dataset.syncStatus = 'synced';
                 const indicator = activity.cell.querySelector('.sync-indicator');
                 if (indicator) indicator.className = 'sync-indicator synced';
-                // Atualiza a barra de progresso
                 const idx = pending.indexOf(activity);
                 updateProgress(idx + 1, pending.length);
             }
@@ -2389,7 +2545,7 @@
     }
 
     // ===================================================================
-    // FUNÇÃO AUXILIAR PARA CRIAR EVENTO (com extendedProperties)
+    // FUNÇÃO AUXILIAR PARA CRIAR EVENTO
     // ===================================================================
     function createCalendarEvent(activity, date) {
         const [hour, minute] = activity.time.split(':');
@@ -2432,6 +2588,42 @@
         const day = String(date.getDate()).padStart(2,'0');
         const [hour, minute] = time.split(':');
         return `c${year}${month}${day}t${hour}${minute}`;
+    }
+
+    function getAllActivitiesFromSchedule() {
+        const activities = [];
+        const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
+        days.forEach(day => {
+            const table = document.getElementById(day+'-table');
+            if (!table) return;
+            const rows = table.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                if (index === 0) return;
+                const timeCell = row.querySelector('.time');
+                const activityCell = row.querySelector('.activity-cell');
+                if (timeCell && activityCell) {
+                    const duration = parseInt(activityCell.dataset.duration) || 60;
+                    const period = activityCell.dataset.period || 'semanal';
+                    const reminder = parseInt(activityCell.dataset.reminder) || 0;
+                    activities.push({
+                        day: day,
+                        time: timeCell.dataset.time,
+                        activity: activityCell.dataset.activity,
+                        duration: duration,
+                        period: period,
+                        reminder: reminder,
+                        syncStatus: activityCell.dataset.syncStatus || 'pending',
+                        cell: activityCell,
+                        semanas: JSON.parse(activityCell.dataset.semanas || '[1,3]'),
+                        mensalTipo: activityCell.dataset.mensalTipo || 'dia',
+                        diaMes: parseInt(activityCell.dataset.diaMes) || 1,
+                        ocorrencia: parseInt(activityCell.dataset.ocorrencia) || 1,
+                        diaSemana: parseInt(activityCell.dataset.diaSemana) || 0
+                    });
+                }
+            });
+        });
+        return activities;
     }
 
     // ===================================================================
@@ -2516,7 +2708,6 @@
             const expiresInMs = (response.expires_in || 3600) * 1000;
             localStorage.setItem('googleTokenExpiry', String(Date.now() + expiresInMs - 30000));
             updateAuthUI();
-            // Importação automática após login
             setTimeout(() => {
                 importFromGoogle();
             }, 500);
