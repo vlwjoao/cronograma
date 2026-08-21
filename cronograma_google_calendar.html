@@ -814,7 +814,7 @@
 
         <div class="sync-section">
             <button class="auth-btn sync-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
-            <button class="auth-btn desync-btn" id="desyncBtn" onclick="desyncNow()" disabled>🗑️ Dessincronizar</button>
+            <button class="auth-btn desync-btn" id="desyncBtn" onclick="desyncNow()" disabled>🗑️ Dessincronizar (apenas eventos do sistema)</button>
         </div>
 
         <div class="month-info" id="monthInfo"></div>
@@ -839,13 +839,14 @@
             <p style="font-size:12px;">📋 <strong>"Carregar Modelo"</strong> preenche com rotina padrão.</p>
             <p style="font-size:12px;">⭐ Atividades com <strong>emoji</strong> aparecem em destaque.</p>
             <p style="font-size:12px;">⏱️ Cada atividade tem duração e periodicidade personalizáveis.</p>
-            <p style="font-size:12px;">🔗 Ao conectar sua conta Google, seus eventos existentes serão importados automaticamente (mês atual + próximo mês).</p>
+            <p style="font-size:12px;">🔗 Ao conectar sua conta Google, você poderá importar eventos existentes do sistema.</p>
         </div>
 
         <div class="utility-bar">
             <div class="utility-left">
                 <button class="action-btn load-btn" id="loadModelBtn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
                 <button class="reset-btn" onclick="clearSchedule()">🗑️ Limpar Tudo</button>
+                <button class="action-btn" onclick="importFromGoogle()" style="background:#8b5cf6;color:white;">📥 Importar do Google</button>
             </div>
             <div class="utility-center">
                 <button class="nav-btn" onclick="changeWeek(-1)">◀ Semana</button>
@@ -1421,7 +1422,6 @@
         html += `</div>`;
         container.innerHTML = html;
 
-        // Adiciona eventos para controlar a visibilidade dos dias da semana
         const dayGroup = container.closest('.modal-body').querySelector('.days-checkbox-group');
         const dayLabel = container.closest('.modal-body').querySelector('label[for="' + containerId + '_days"]');
         if (dayGroup && dayLabel) {
@@ -1447,7 +1447,6 @@
             container.querySelectorAll('input[name="' + containerId + '_mensalTipo"]').forEach(radio => {
                 radio.addEventListener('change', toggleDays);
             });
-            // Executa uma vez para estado inicial
             setTimeout(toggleDays, 50);
         }
 
@@ -1470,7 +1469,6 @@
                 const occDiv = document.getElementById(containerId + '_mensal_ocorrencia');
                 if (diaDiv) diaDiv.style.display = val === 'dia' ? 'block' : 'none';
                 if (occDiv) occDiv.style.display = val === 'ocorrencia' ? 'block' : 'none';
-                // Atualiza visibilidade dos dias da semana
                 const dayGroup = container.closest('.modal-body').querySelector('.days-checkbox-group');
                 const dayLabel = container.closest('.modal-body').querySelector('label[for="' + containerId + '_days"]');
                 if (dayGroup && dayLabel) {
@@ -1645,10 +1643,6 @@
         };
         renderPeriodOptions('editPeriodContainer', periodData.period, periodData);
 
-        // Selecionar os dias da semana já marcados para esta atividade
-        const dayMap = { 'segunda':1, 'terca':2, 'quarta':3, 'quinta':4, 'sexta':5, 'sabado':6, 'domingo':0 };
-        // Não temos uma forma direta de saber os dias da semana salvos para esta atividade
-        // Mas vamos tentar inferir a partir do dia atual
         const selectedDays = data.days ? JSON.parse(data.days) : [day];
         document.querySelectorAll('#editDayGroup input[type="checkbox"]').forEach(cb => {
             cb.checked = selectedDays.includes(cb.value);
@@ -1675,7 +1669,6 @@
         if (!newActivity) { alert('A atividade não pode ficar vazia.'); return; }
         if (newDuration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (newReminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
-        // Se for mensal com dia do mês, não exige dias da semana
         if (!(periodData && periodData.period === 'mensal' && periodData.mensalTipo === 'dia')) {
             if (selectedDays.length === 0) {
                 alert('Selecione pelo menos um dia da semana.');
@@ -1771,8 +1764,6 @@
         if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido.'); return; }
         if (duration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (reminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
-        
-        // Se for mensal com dia do mês, não exige dias da semana
         if (!(periodData && periodData.period === 'mensal' && periodData.mensalTipo === 'dia')) {
             if (selectedDays.length === 0) {
                 alert('Selecione pelo menos um dia da semana.');
@@ -1984,7 +1975,6 @@
                             item.diaSemana = parseInt(activityCell.dataset.diaSemana) || 0;
                         }
                     }
-                    // Guarda os dias da semana em que a atividade foi marcada
                     const daysAttr = activityCell.dataset.days;
                     if (daysAttr) {
                         item.days = JSON.parse(daysAttr);
@@ -2240,39 +2230,30 @@
     }
 
     // ===================================================================
-    // IMPORTAÇÃO AUTOMÁTICA (mês atual + próximo mês)
+    // IMPORTAÇÃO DO GOOGLE (agora manual e seletiva)
     // ===================================================================
     async function importFromGoogle() {
-        if (importDone) return;
+        if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
 
-        // Define período: 1º dia do mês atual até último dia do mês seguinte
         const now = new Date();
-        const startDate = new Date(now.getFullYear(), now.getMonth(), 1); // 1º dia do mês atual
-        const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59); // último dia do mês seguinte
+        const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
 
-        const totalAtividades = document.querySelectorAll('.activity-cell').length;
-        if (totalAtividades > 0) {
-            if (!confirm(`📥 Existem ${totalAtividades} atividades já cadastradas.\n\nImportar eventos do Google pode criar duplicatas. Deseja continuar?`)) {
-                return;
-            }
-        }
-
-        setGlobalSyncStatus('syncing', '⏳ Importando do Google...');
-        showProgress(`⏳ Importando eventos de ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}...`);
+        setGlobalSyncStatus('syncing', '⏳ Buscando eventos do Google...');
+        showProgress(`⏳ Buscando eventos de ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}...`);
 
         try {
             const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startDate.toISOString()}&timeMax=${endDate.toISOString()}&maxResults=1000&orderBy=startTime&singleEvents=true`;
             const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
             if (response.status === 401) { forceReauth(); hideProgress(); return; }
             const data = await response.json();
-            if (!data.items) { 
-                alert('Nenhum evento encontrado no período.'); 
-                hideProgress(); 
-                setGlobalSyncStatus('synced', '✅ Importação concluída (0 eventos)');
-                importDone = true;
-                return; 
+            if (!data.items || data.items.length === 0) {
+                alert('Nenhum evento encontrado no período.');
+                hideProgress();
+                setGlobalSyncStatus('synced', '✅ Nenhum evento para importar');
+                return;
             }
 
             const eventosCronograma = data.items.filter(ev => 
@@ -2285,8 +2266,16 @@
                 alert('Nenhum evento criado por este aplicativo encontrado.');
                 hideProgress();
                 setGlobalSyncStatus('synced', '✅ Nenhum evento para importar');
-                importDone = true;
                 return;
+            }
+
+            const totalAtividades = document.querySelectorAll('.activity-cell').length;
+            if (totalAtividades > 0) {
+                if (!confirm(`📥 Existem ${totalAtividades} atividades no cronograma local.\n\nA importação trará ${eventosCronograma.length} eventos do Google que podem gerar duplicatas.\n\nDeseja continuar?`)) {
+                    hideProgress();
+                    setGlobalSyncStatus('synced', '✅ Importação cancelada');
+                    return;
+                }
             }
 
             let importedCount = 0;
@@ -2343,7 +2332,6 @@
             updateGlobalStatus();
             alert(`✅ ${importedCount} eventos importados com sucesso!`);
             setGlobalSyncStatus('synced', `✅ ${importedCount} importados`);
-            importDone = true;
         } catch (error) {
             setGlobalSyncStatus('error', '❌ Erro: ' + error.message);
             alert('Erro na importação: ' + error.message);
@@ -2353,7 +2341,7 @@
     }
 
     // ===================================================================
-    // DESSINCRONIZAR COM BARRA DE PROGRESSO
+    // DESSINCRONIZAR (APENAS EVENTOS DO SISTEMA)
     // ===================================================================
     async function desyncNow() {
         if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
@@ -2364,13 +2352,13 @@
         const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
 
-        if (!confirm(`⚠️ Isso vai APAGAR TODOS os eventos do seu Google Calendar entre ${startDate.toLocaleDateString('pt-BR')} e ${endDate.toLocaleDateString('pt-BR')}.\n\nIsso inclui eventos pessoais e de outros aplicativos.\n\nTem certeza que deseja continuar?`)) {
+        if (!confirm(`⚠️ Isso vai APAGAR APENAS os eventos criados por este aplicativo no período de ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}.\n\nEventos pessoais/feriados NÃO serão afetados.\n\nTem certeza que deseja continuar?`)) {
             return;
         }
 
         isSyncing = true;
         setButtonsEnabled(false);
-        showProgress('⏳ Dessincronizando (apagando todos os eventos do período)...');
+        showProgress('⏳ Dessincronizando (apenas eventos do sistema)...');
         setGlobalSyncStatus('syncing', '🔄 Dessincronizando...');
 
         try {
@@ -2387,10 +2375,26 @@
                 return;
             }
 
-            const total = data.items.length;
+            // Filtra apenas eventos com a propriedade app: 'cronograma'
+            const eventosSistema = data.items.filter(ev => 
+                ev.extendedProperties && 
+                ev.extendedProperties.private && 
+                ev.extendedProperties.private.app === 'cronograma'
+            );
+
+            if (eventosSistema.length === 0) {
+                alert('Nenhum evento do sistema encontrado no período.');
+                hideProgress();
+                setGlobalSyncStatus('synced', '✅ Nenhum evento do sistema para apagar');
+                isSyncing = false;
+                setButtonsEnabled(true);
+                return;
+            }
+
+            const total = eventosSistema.length;
             let deletedCount = 0;
             for (let i = 0; i < total; i++) {
-                const ev = data.items[i];
+                const ev = eventosSistema[i];
                 try {
                     const delRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${ev.id}`, {
                         method: 'DELETE',
@@ -2401,14 +2405,13 @@
                 } catch (err) {
                     if (err.message === '401') { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
                 }
-                // Atualiza a barra de progresso
                 updateProgress(i + 1, total);
             }
 
             markAllActivitiesAsPending();
             saveScheduleToStorage();
 
-            alert(`✅ ${deletedCount} eventos removidos do período.`);
+            alert(`✅ ${deletedCount} eventos do sistema removidos.`);
             setGlobalSyncStatus('pending', `⏳ ${deletedCount} removidos, pendentes`);
             setTimeout(() => updateGlobalStatus(), 3000);
         } catch (error) {
@@ -2502,9 +2505,7 @@
             const expiresInMs = (response.expires_in || 3600) * 1000;
             localStorage.setItem('googleTokenExpiry', String(Date.now() + expiresInMs - 30000));
             updateAuthUI();
-            setTimeout(() => {
-                importFromGoogle();
-            }, 500);
+            // Não importa automaticamente – o usuário usa o botão "Importar do Google"
         } else {
             console.error('Resposta sem access_token:', response);
             setGlobalSyncStatus('error', '❌ Erro na autenticação.');
