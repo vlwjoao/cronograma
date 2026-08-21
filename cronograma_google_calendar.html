@@ -539,7 +539,7 @@
             margin-bottom: 10px;
         }
 
-        /* ===== MODAIS (reduzido) ===== */
+        /* ===== MODAIS ===== */
         .modal { 
             display: none; 
             position: fixed; 
@@ -1434,7 +1434,7 @@
     }
 
     // ===================================================================
-    // EMOJI PICKER (resumido)
+    // EMOJI PICKER
     // ===================================================================
     const EMOJIS = {
         '😀':'Smileys','😁':'Smileys','😂':'Smileys','🤣':'Smileys','😃':'Smileys','😄':'Smileys','😅':'Smileys','😆':'Smileys','😉':'Smileys','😊':'Smileys','😋':'Smileys','😎':'Smileys','😍':'Smileys','🥰':'Smileys','😘':'Smileys','😗':'Smileys','😙':'Smileys','😚':'Smileys','🥲':'Smileys','😜':'Smileys','😝':'Smileys','😛':'Smileys','🤑':'Smileys','🤓':'Smileys','😈':'Smileys','👿':'Smileys','👹':'Smileys','👺':'Smileys','💀':'Smileys','👻':'Smileys','👽':'Smileys','🤖':'Smileys','💩':'Smileys','😺':'Smileys','😸':'Smileys','😻':'Smileys','😽':'Smileys','🙀':'Smileys','🙈':'Smileys','🙉':'Smileys','🙊':'Smileys',
@@ -1891,7 +1891,7 @@
     }
 
     // ===================================================================
-    // NOVA ATIVIDADE (CORRIGIDA)
+    // NOVA ATIVIDADE
     // ===================================================================
     function openAddModal() {
         document.getElementById('newActivityName').value = '';
@@ -1936,7 +1936,6 @@
         if (duration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (reminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
 
-        // ===== CORREÇÃO: Para mensal com dia fixo, seleciona automaticamente todos os dias da semana =====
         let selectedDays = Array.from(document.querySelectorAll('input[name="newDay"]:checked')).map(cb => cb.value);
         if (periodData && periodData.period === 'mensal' && periodData.mensalTipo === 'dia') {
             selectedDays = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
@@ -1968,7 +1967,6 @@
                 activityCell.dataset.activity += `, ${name}`;
                 activityCell.dataset.reminder = reminder;
                 activityCell.dataset.syncStatus = 'pending';
-                // Atualiza periodicidade se existir
                 if (periodData) {
                     activityCell.dataset.period = periodData.period;
                     if (periodData.period === 'quinzenal') {
@@ -2263,7 +2261,7 @@
     }
 
     // ===================================================================
-    // MODELO DE ROTINA (DEFAULT_ROUTINE) - mantido
+    // MODELO DE ROTINA (DEFAULT_ROUTINE)
     // ===================================================================
     const DEFAULT_ROUTINE = {
         segunda: [
@@ -2428,8 +2426,93 @@
     }
 
     // ===================================================================
-    // IMPORTAÇÃO AUTOMÁTICA (CORRIGIDA)
+    // FUNÇÕES DE AUTENTICAÇÃO E SINCRONIZAÇÃO (CORRIGIDAS E COMPLETAS)
     // ===================================================================
+    function getValidToken() {
+        // Tenta obter um token de acesso válido
+        if (window.gapi && window.gapi.client && window.gapi.client.getToken) {
+            const token = window.gapi.client.getToken();
+            if (token && token.access_token) {
+                return token.access_token;
+            }
+        }
+        return null;
+    }
+
+    function forceReauth() {
+        alert('Sua sessão expirou. Faça login novamente.');
+        handleConnectClick();
+    }
+
+    function showProgress(msg) {
+        const container = document.getElementById('progressContainer');
+        container.classList.add('active');
+        document.getElementById('progressMessage').textContent = msg || '⏳ Processando...';
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('progressPercent').textContent = '0%';
+    }
+
+    function hideProgress() {
+        document.getElementById('progressContainer').classList.remove('active');
+    }
+
+    function updateProgress(percent, msg) {
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressPercent').textContent = percent + '%';
+        if (msg) document.getElementById('progressMessage').textContent = msg;
+    }
+
+    function setButtonsEnabled(enabled) {
+        document.getElementById('connectBtn').disabled = !enabled;
+        document.getElementById('syncBtn').disabled = !enabled;
+        document.getElementById('desyncBtn').disabled = !enabled;
+        // também desabilita outros botões durante sincronização
+        document.querySelectorAll('.action-btn, .reset-btn, .add-btn, .tab-btn, .nav-btn').forEach(btn => {
+            btn.disabled = !enabled;
+        });
+    }
+
+    // Inicialização do Google Identity Services
+    function initGoogleAuth() {
+        try {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (resp) => {
+                    if (resp.error) {
+                        console.error('Erro ao obter token:', resp);
+                        setGlobalSyncStatus('error', '❌ Erro de autenticação');
+                        isAuthenticated = false;
+                        document.getElementById('syncBtn').disabled = true;
+                        document.getElementById('desyncBtn').disabled = true;
+                        return;
+                    }
+                    isAuthenticated = true;
+                    document.getElementById('syncBtn').disabled = false;
+                    document.getElementById('desyncBtn').disabled = false;
+                    setGlobalSyncStatus('synced', '✅ Conectado');
+                    document.getElementById('userInfo').textContent = '👤 Conectado';
+                    // Carrega eventos após autenticação
+                    importFromGoogle();
+                }
+            });
+        } catch (e) {
+            console.error('Erro ao inicializar auth:', e);
+        }
+    }
+
+    function handleConnectClick() {
+        if (!tokenClient) {
+            initGoogleAuth();
+            if (!tokenClient) {
+                alert('Erro ao inicializar autenticação. Recarregue a página.');
+                return;
+            }
+        }
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
+
+    // Importação automática (já definida anteriormente, mas vamos mantê-la completa)
     async function importFromGoogle() {
         if (importDone) return;
         const token = getValidToken();
@@ -2541,7 +2624,140 @@
     }
 
     // ===================================================================
-    // DESSINCRONIZAR (apenas eventos do sistema)
+    // SINCRONIZAR (syncNow)
+    // ===================================================================
+    async function syncNow() {
+        if (isSyncing) { alert('⚠️ Já está sincronizando.'); return; }
+        const token = getValidToken();
+        if (!token) { forceReauth(); return; }
+
+        const pending = getPendingActivities();
+        if (pending.length === 0) {
+            alert('✅ Nenhuma atividade pendente para sincronizar.');
+            return;
+        }
+
+        isSyncing = true;
+        setButtonsEnabled(false);
+        showProgress('⏳ Sincronizando atividades pendentes...');
+        setGlobalSyncStatus('syncing', '🔄 Sincronizando...');
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < pending.length; i++) {
+            const item = pending[i];
+            updateProgress(Math.round((i / pending.length) * 100), `Sincronizando ${i+1}/${pending.length}: ${item.activity}`);
+
+            try {
+                // Construir o evento no Google Calendar
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const startOfWeek = getStartOfWeek(currentWeekOffset);
+                const dayMap = { 'segunda':1, 'terca':2, 'quarta':3, 'quinta':4, 'sexta':5, 'sabado':6, 'domingo':0 };
+                const dayIndex = dayMap[item.day];
+                let eventDate = new Date(startOfWeek);
+                eventDate.setDate(startOfWeek.getDate() + (dayIndex - 1) % 7);
+                if (dayIndex === 0) eventDate.setDate(startOfWeek.getDate() + 6);
+
+                // Ajustar para o horário
+                const [hours, minutes] = item.time.split(':').map(Number);
+                eventDate.setHours(hours, minutes, 0, 0);
+
+                const endDate = new Date(eventDate);
+                endDate.setMinutes(endDate.getMinutes() + item.duration);
+
+                // Dados do evento
+                const eventData = {
+                    summary: item.activity,
+                    start: { dateTime: eventDate.toISOString(), timeZone: 'America/Sao_Paulo' },
+                    end: { dateTime: endDate.toISOString(), timeZone: 'America/Sao_Paulo' },
+                    extendedProperties: {
+                        private: { app: 'cronograma' }
+                    }
+                };
+
+                // Lembrete
+                const reminderSettings = getReminderSettings();
+                const useReminder = item.reminder > 0 ? item.reminder : (reminderSettings.enabled ? reminderSettings.minutes : 0);
+                if (useReminder > 0) {
+                    eventData.reminders = {
+                        useDefault: false,
+                        overrides: [
+                            { method: 'popup', minutes: useReminder }
+                        ]
+                    };
+                }
+
+                // Criar ou atualizar?
+                // Vamos tentar buscar um evento existente com o mesmo horário e nome (para evitar duplicatas)
+                const searchUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${eventDate.toISOString()}&timeMax=${endDate.toISOString()}&maxResults=10&singleEvents=true`;
+                const searchResp = await fetch(searchUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (searchResp.status === 401) { forceReauth(); throw new Error('Token expirado'); }
+                const searchData = await searchResp.json();
+                let existingEvent = null;
+                if (searchData.items) {
+                    for (let ev of searchData.items) {
+                        if (ev.summary === item.activity && 
+                            ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.app === 'cronograma') {
+                            existingEvent = ev;
+                            break;
+                        }
+                    }
+                }
+
+                let finalResp;
+                if (existingEvent) {
+                    // Atualizar
+                    finalResp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${existingEvent.id}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(eventData)
+                    });
+                } else {
+                    // Criar
+                    finalResp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(eventData)
+                    });
+                }
+
+                if (!finalResp.ok) {
+                    const errText = await finalResp.text();
+                    throw new Error(`Erro ${finalResp.status}: ${errText}`);
+                }
+
+                // Marcar como sincronizado
+                item.cell.dataset.syncStatus = 'synced';
+                const indicator = item.cell.querySelector('.sync-indicator');
+                if (indicator) indicator.className = 'sync-indicator synced';
+                successCount++;
+
+            } catch (err) {
+                console.error('Erro ao sincronizar:', err);
+                errorCount++;
+                item.cell.dataset.syncStatus = 'error';
+                const indicator = item.cell.querySelector('.sync-indicator');
+                if (indicator) indicator.className = 'sync-indicator error';
+            }
+        }
+
+        hideProgress();
+        updateGlobalStatus();
+        setButtonsEnabled(true);
+        isSyncing = false;
+        saveScheduleToStorage();
+
+        if (errorCount === 0) {
+            alert(`✅ ${successCount} atividade(s) sincronizada(s) com sucesso!`);
+        } else {
+            alert(`⚠️ ${successCount} sincronizadas, ${errorCount} com erro. Verifique o console.`);
+        }
+    }
+
+    // ===================================================================
+    // DESSINCRONIZAR (desyncNow)
     // ===================================================================
     async function desyncNow() {
         if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
@@ -2584,4 +2800,114 @@
             if (eventosSistema.length === 0) {
                 alert('Nenhum evento do sistema encontrado no período.');
                 hideProgress();
-                setGlobalSyncStatus('synced
+                setGlobalSyncStatus('synced', '✅ Nenhum evento do sistema');
+                isSyncing = false;
+                setButtonsEnabled(true);
+                return;
+            }
+
+            let deletedCount = 0;
+            for (let ev of eventosSistema) {
+                const delResp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${ev.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (delResp.ok) deletedCount++;
+                else console.error('Falha ao deletar evento', ev.id);
+                // Atualizar progresso
+                const pct = Math.round((deletedCount / eventosSistema.length) * 100);
+                updateProgress(pct, `Removendo ${deletedCount}/${eventosSistema.length}`);
+            }
+
+            // Marcar todas as atividades como pendentes (pois foram removidas do Google)
+            markAllActivitiesAsPending();
+            saveScheduleToStorage();
+
+            alert(`✅ ${deletedCount} eventos removidos do Google Calendar. Os itens no cronograma foram marcados como pendentes para nova sincronização.`);
+            setGlobalSyncStatus('pending', `⏳ ${deletedCount} removidos, pendentes`);
+            importDone = false; // Permite reimportar
+
+        } catch (error) {
+            setGlobalSyncStatus('error', '❌ Erro: ' + error.message);
+            alert('Erro na dessincronização: ' + error.message);
+        } finally {
+            hideProgress();
+            isSyncing = false;
+            setButtonsEnabled(true);
+        }
+    }
+
+    // ===================================================================
+    // MUDANÇA DE ABA
+    // ===================================================================
+    function switchTab(tabId, event) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        // Atualiza o botão ativo
+        const btns = document.querySelectorAll('.tab-btn');
+        const index = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'].indexOf(tabId);
+        if (btns[index]) btns[index].classList.add('active');
+        // Filtra pela data
+        filterActivitiesByDate(tabId);
+        updateImportantBox(tabId);
+    }
+
+    // ===================================================================
+    // FECHAR MODAIS
+    // ===================================================================
+    function closeModal() {
+        document.getElementById('noteModal').classList.remove('show');
+    }
+    function closeAddModal() {
+        document.getElementById('addModal').classList.remove('show');
+    }
+
+    // ===================================================================
+    // INICIALIZAÇÃO
+    // ===================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Carrega lembretes do popup
+        loadPopupReminder();
+
+        // Inicializa autenticação
+        initGoogleAuth();
+
+        // Carrega dados do localStorage
+        const hasData = loadScheduleFromStorage();
+
+        // Se não houver dados, carrega o modelo por padrão (opcional)
+        // Se quiser carregar automaticamente, descomente:
+        // if (!hasData) loadRoutineModel();
+
+        // Atualiza display da semana
+        updateWeekDisplay();
+
+        // Aplica filtros
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) {
+            filterActivitiesByDate(activeTab.id);
+            updateImportantBox(activeTab.id);
+        }
+
+        // Atualiza status global
+        updateGlobalStatus();
+
+        // Atacha handlers de clique nos horários (já são adicionados na criação, mas por segurança)
+        attachTimeClickHandlers();
+
+        // Se já estiver autenticado, ativa botões
+        if (isAuthenticated) {
+            document.getElementById('syncBtn').disabled = false;
+            document.getElementById('desyncBtn').disabled = false;
+        }
+
+        // Mostra pop-up flutuante
+        document.getElementById('floatingPopup').style.display = 'flex';
+
+        console.log('✅ Aplicativo inicializado com sucesso!');
+    });
+
+</script>
+</body>
+</html>
