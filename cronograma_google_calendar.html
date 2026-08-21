@@ -814,7 +814,7 @@
 
         <div class="sync-section">
             <button class="auth-btn sync-btn" id="syncBtn" onclick="syncNow()" disabled>🔄 Sincronizar Agora</button>
-            <button class="auth-btn desync-btn" id="desyncBtn" onclick="desyncNow()" disabled>🗑️ Dessincronizar (apenas eventos do sistema)</button>
+            <button class="auth-btn desync-btn" id="desyncBtn" onclick="desyncNow()" disabled>🗑️ Dessincronizar</button>
         </div>
 
         <div class="month-info" id="monthInfo"></div>
@@ -839,7 +839,6 @@
             <p style="font-size:12px;">📋 <strong>"Carregar Modelo"</strong> preenche com rotina padrão.</p>
             <p style="font-size:12px;">⭐ Atividades com <strong>emoji</strong> aparecem em destaque.</p>
             <p style="font-size:12px;">⏱️ Cada atividade tem duração e periodicidade personalizáveis.</p>
-            <p style="font-size:12px;">🔗 Ao conectar sua conta Google, seus eventos existentes serão importados automaticamente (mês atual + próximo mês).</p>
         </div>
 
         <div class="utility-bar">
@@ -2436,14 +2435,168 @@
     }
 
     // ===================================================================
-    // AUTENTICAÇÃO E OUTRAS FUNÇÕES (mantidas)
+    // AUTENTICAÇÃO
     // ===================================================================
-    // (As funções handleConnectClick, initializeGoogleAuth, etc. permanecem as mesmas do código anterior)
-    // Para evitar repetição, mantenha o restante do código (que já está funcionando) igual ao envio anterior.
+    function handleConnectClick() {
+        if (isAuthenticated) {
+            isAuthenticated = false;
+            importDone = false;
+            localStorage.removeItem('googleToken');
+            localStorage.removeItem('googleTokenExpiry');
+            document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
+            document.getElementById('syncBtn').disabled = true;
+            document.getElementById('desyncBtn').disabled = true;
+            document.getElementById('userInfo').textContent = '';
+            setGlobalSyncStatus('disconnected', '🔴 Desconectado');
+            window.location.reload();
+            return;
+        }
+
+        if (!tokenClient) {
+            console.warn('tokenClient não inicializado. Tentando reinicializar...');
+            try {
+                initializeGoogleAuth();
+                setTimeout(() => {
+                    if (tokenClient) {
+                        tokenClient.requestAccessToken({ prompt: 'consent' });
+                    } else {
+                        alert('Erro: não foi possível inicializar a autenticação. Recarregue a página.');
+                    }
+                }, 300);
+            } catch (e) {
+                console.error('Erro ao reinicializar:', e);
+                alert('Erro ao inicializar autenticação. Verifique o console.');
+            }
+            return;
+        }
+
+        try {
+            tokenClient.requestAccessToken({ prompt: 'consent' });
+        } catch (e) {
+            console.error('Erro ao solicitar token:', e);
+            alert('Erro ao conectar. Verifique o console.');
+        }
+    }
+
+    function initializeGoogleAuth() {
+        try {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: handleCredentialResponse,
+                error_callback: handleAuthError,
+            });
+            console.log('tokenClient inicializado.');
+            const storedToken = localStorage.getItem('googleToken');
+            const expiry = parseInt(localStorage.getItem('googleTokenExpiry') || '0', 10);
+            if (storedToken && Date.now() < expiry) {
+                isAuthenticated = true;
+                importDone = true;
+                updateAuthUI();
+            } else if (storedToken) {
+                localStorage.removeItem('googleToken');
+                localStorage.removeItem('googleTokenExpiry');
+            }
+        } catch (e) {
+            console.error('Erro ao inicializar autenticação:', e);
+            setGlobalSyncStatus('error', '❌ Erro ao inicializar autenticação.');
+        }
+    }
+
+    function handleAuthError(error) {
+        console.error('Erro de autenticação:', error);
+        setGlobalSyncStatus('error', '❌ Erro: ' + (error.error || error.message || 'desconhecido'));
+    }
+
+    function handleCredentialResponse(response) {
+        if (response.access_token) {
+            isAuthenticated = true;
+            importDone = false;
+            localStorage.setItem('googleToken', response.access_token);
+            const expiresInMs = (response.expires_in || 3600) * 1000;
+            localStorage.setItem('googleTokenExpiry', String(Date.now() + expiresInMs - 30000));
+            updateAuthUI();
+            // Importação automática após login
+            setTimeout(() => {
+                importFromGoogle();
+            }, 500);
+        } else {
+            console.error('Resposta sem access_token:', response);
+            setGlobalSyncStatus('error', '❌ Erro na autenticação.');
+        }
+    }
+
+    function updateAuthUI() {
+        if (isAuthenticated) {
+            document.getElementById('connectBtn').textContent = '🔓 Desconectar';
+            document.getElementById('syncBtn').disabled = false;
+            document.getElementById('desyncBtn').disabled = false;
+            document.getElementById('userInfo').textContent = '✅ Conectado com Google';
+            updateGlobalStatus();
+        } else {
+            document.getElementById('connectBtn').textContent = '🔗 Conectar Google';
+            document.getElementById('syncBtn').disabled = true;
+            document.getElementById('desyncBtn').disabled = true;
+            document.getElementById('userInfo').textContent = '';
+            setGlobalSyncStatus('disconnected', '🔴 Desconectado');
+        }
+    }
+
+    function getValidToken() {
+        const token = localStorage.getItem('googleToken');
+        const expiry = parseInt(localStorage.getItem('googleTokenExpiry') || '0', 10);
+        if (!token || Date.now() >= expiry) return null;
+        return token;
+    }
+
+    function forceReauth() {
+        isAuthenticated = false;
+        importDone = false;
+        localStorage.removeItem('googleToken');
+        localStorage.removeItem('googleTokenExpiry');
+        updateAuthUI();
+        setGlobalSyncStatus('error', '⚠️ Sessão expirada, reconecte');
+        if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
+    }
+
+    function syncNow() {
+        if (getValidToken()) syncWithGoogleCalendar();
+        else forceReauth();
+    }
+
+    function setButtonsEnabled(enabled) {
+        document.getElementById('syncBtn').disabled = !(enabled && isAuthenticated);
+        document.getElementById('desyncBtn').disabled = !(enabled && isAuthenticated);
+    }
+
+    function showProgress(message) {
+        document.getElementById('progressContainer').classList.add('active');
+        document.getElementById('progressMessage').textContent = message || '⏳ Sincronizando...';
+        setGlobalSyncStatus('syncing', '🔄 Sincronizando...');
+    }
+    function updateProgress(current, total) {
+        const pct = Math.min(100, Math.round((current / total) * 100));
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressPercent').textContent = pct + '%';
+    }
+    function hideProgress() {
+        document.getElementById('progressContainer').classList.remove('active');
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('progressPercent').textContent = '0%';
+    }
 
     // ===================================================================
-    // INICIALIZAÇÃO
+    // TABS, INICIALIZAÇÃO
     // ===================================================================
+    window.switchTab = function(day, event) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(day).classList.add('active');
+        if (event) event.target.classList.add('active');
+        filterActivitiesByDate(day);
+        updateImportantBox(day);
+    };
+
     window.addEventListener('load', function() {
         loadReminderSettings();
         loadGlobalStatusFromStorage();
@@ -2459,7 +2612,18 @@
         updateGlobalStatus();
     });
 
-    // Funções auxiliares modais
+    window.addEventListener('click', function(e) {
+        if (e.target === document.getElementById('noteModal')) closeModal();
+        if (e.target === document.getElementById('addModal')) closeAddModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { 
+            closeModal(); 
+            closeAddModal();
+            closeEmojiPicker();
+        }
+    });
+
     function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
     function closeModal() { document.getElementById('noteModal').classList.remove('show'); }
 </script>
