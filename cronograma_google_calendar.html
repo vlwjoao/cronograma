@@ -844,7 +844,7 @@
 
         <div class="utility-bar">
             <div class="utility-left">
-                <button class="action-btn load-btn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
+                <button class="action-btn load-btn" id="loadModelBtn" onclick="loadRoutineModel()">📋 Carregar Modelo</button>
                 <button class="reset-btn" onclick="clearSchedule()">🗑️ Limpar Tudo</button>
             </div>
             <div class="utility-center">
@@ -988,6 +988,16 @@
             <div id="editPeriodContainer" class="period-group"></div>
             <label>🔔 Lembrete individual (minutos antes - deixe vazio para usar o global):</label>
             <input type="number" id="editReminder" min="0" max="1440" placeholder="ex: 15" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;">
+            <label id="editDayLabel">Dias da Semana:</label>
+            <div class="days-checkbox-group" id="editDayGroup">
+                <label class="day-checkbox-label"><input type="checkbox" name="editDay" value="segunda"> Seg</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="editDay" value="terca"> Ter</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="editDay" value="quarta"> Qua</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="editDay" value="quinta"> Qui</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="editDay" value="sexta"> Sex</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="editDay" value="sabado"> Sab</label>
+                <label class="day-checkbox-label"><input type="checkbox" name="editDay" value="domingo"> Dom</label>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
@@ -1016,8 +1026,8 @@
             <div id="addPeriodContainer" class="period-group"></div>
             <label>🔔 Lembrete individual (minutos antes - deixe vazio para usar o global):</label>
             <input type="number" id="newActivityReminder" min="0" max="1440" placeholder="ex: 15" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;">
-            <label>Dias da Semana:</label>
-            <div class="days-checkbox-group">
+            <label id="addDayLabel">Dias da Semana:</label>
+            <div class="days-checkbox-group" id="addDayGroup">
                 <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="segunda"> Seg</label>
                 <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="terca"> Ter</label>
                 <label class="day-checkbox-label"><input type="checkbox" name="newDay" value="quarta"> Qua</label>
@@ -1149,7 +1159,7 @@
     }
 
     // ===================================================================
-    // CONTROLE DE STATUS (mantido)
+    // CONTROLE DE STATUS
     // ===================================================================
     function getActivityCell(day, time) {
         const table = document.getElementById(day + '-table');
@@ -1411,6 +1421,36 @@
         html += `</div>`;
         container.innerHTML = html;
 
+        // Adiciona eventos para controlar a visibilidade dos dias da semana
+        const dayGroup = container.closest('.modal-body').querySelector('.days-checkbox-group');
+        const dayLabel = container.closest('.modal-body').querySelector('label[for="' + containerId + '_days"]');
+        if (dayGroup && dayLabel) {
+            const toggleDays = () => {
+                const periodRadio = container.querySelector('input[name="' + containerId + '_period"]:checked');
+                if (periodRadio) {
+                    const periodVal = periodRadio.value;
+                    if (periodVal === 'mensal') {
+                        const tipoRadio = container.querySelector('input[name="' + containerId + '_mensalTipo"]:checked');
+                        if (tipoRadio && tipoRadio.value === 'dia') {
+                            dayGroup.style.display = 'none';
+                            dayLabel.style.display = 'none';
+                            return;
+                        }
+                    }
+                    dayGroup.style.display = 'grid';
+                    dayLabel.style.display = 'block';
+                }
+            };
+            container.querySelectorAll('input[name="' + containerId + '_period"]').forEach(radio => {
+                radio.addEventListener('change', toggleDays);
+            });
+            container.querySelectorAll('input[name="' + containerId + '_mensalTipo"]').forEach(radio => {
+                radio.addEventListener('change', toggleDays);
+            });
+            // Executa uma vez para estado inicial
+            setTimeout(toggleDays, 50);
+        }
+
         container.querySelectorAll('input[name="' + containerId + '_period"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const val = this.value;
@@ -1430,6 +1470,18 @@
                 const occDiv = document.getElementById(containerId + '_mensal_ocorrencia');
                 if (diaDiv) diaDiv.style.display = val === 'dia' ? 'block' : 'none';
                 if (occDiv) occDiv.style.display = val === 'ocorrencia' ? 'block' : 'none';
+                // Atualiza visibilidade dos dias da semana
+                const dayGroup = container.closest('.modal-body').querySelector('.days-checkbox-group');
+                const dayLabel = container.closest('.modal-body').querySelector('label[for="' + containerId + '_days"]');
+                if (dayGroup && dayLabel) {
+                    if (val === 'dia') {
+                        dayGroup.style.display = 'none';
+                        dayLabel.style.display = 'none';
+                    } else {
+                        dayGroup.style.display = 'grid';
+                        dayLabel.style.display = 'block';
+                    }
+                }
             });
         });
     }
@@ -1593,6 +1645,15 @@
         };
         renderPeriodOptions('editPeriodContainer', periodData.period, periodData);
 
+        // Selecionar os dias da semana já marcados para esta atividade
+        const dayMap = { 'segunda':1, 'terca':2, 'quarta':3, 'quinta':4, 'sexta':5, 'sabado':6, 'domingo':0 };
+        // Não temos uma forma direta de saber os dias da semana salvos para esta atividade
+        // Mas vamos tentar inferir a partir do dia atual
+        const selectedDays = data.days ? JSON.parse(data.days) : [day];
+        document.querySelectorAll('#editDayGroup input[type="checkbox"]').forEach(cb => {
+            cb.checked = selectedDays.includes(cb.value);
+        });
+
         modal.classList.add('show');
         document.getElementById('editActivityName').focus();
     }
@@ -1609,10 +1670,18 @@
         const newDuration = parseInt(durationInput.value) || 60;
         const newReminder = parseInt(reminderInput.value) || 0;
         const periodData = getPeriodData('editPeriodContainer');
+        const selectedDays = Array.from(document.querySelectorAll('#editDayGroup input[type="checkbox"]:checked')).map(cb => cb.value);
         
         if (!newActivity) { alert('A atividade não pode ficar vazia.'); return; }
         if (newDuration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (newReminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
+        // Se for mensal com dia do mês, não exige dias da semana
+        if (!(periodData && periodData.period === 'mensal' && periodData.mensalTipo === 'dia')) {
+            if (selectedDays.length === 0) {
+                alert('Selecione pelo menos um dia da semana.');
+                return;
+            }
+        }
         
         const table = document.getElementById(day+'-table');
         const rows = table.querySelectorAll('tr');
@@ -1638,6 +1707,11 @@
                     }
                 } else {
                     activityCell.dataset.period = 'semanal';
+                }
+                if (selectedDays.length > 0) {
+                    activityCell.dataset.days = JSON.stringify(selectedDays);
+                } else {
+                    activityCell.dataset.days = JSON.stringify([day]);
                 }
                 activityCell.dataset.syncStatus = 'pending';
                 renderActivityCell(activityCell);
@@ -1697,7 +1771,14 @@
         if (!time || !TIME_REGEX.test(time)) { alert('Informe um horário válido.'); return; }
         if (duration < 1) { alert('Duração mínima: 1 minuto.'); return; }
         if (reminder < 0) { alert('Lembrete não pode ser negativo.'); return; }
-        if (selectedDays.length === 0) { alert('Selecione pelo menos um dia.'); return; }
+        
+        // Se for mensal com dia do mês, não exige dias da semana
+        if (!(periodData && periodData.period === 'mensal' && periodData.mensalTipo === 'dia')) {
+            if (selectedDays.length === 0) {
+                alert('Selecione pelo menos um dia da semana.');
+                return;
+            }
+        }
 
         const dupDays = [];
         selectedDays.forEach(day => {
@@ -1748,6 +1829,11 @@
                     }
                 } else {
                     activityCell.dataset.period = 'semanal';
+                }
+                if (selectedDays.length > 0) {
+                    activityCell.dataset.days = JSON.stringify(selectedDays);
+                } else {
+                    activityCell.dataset.days = JSON.stringify([day]);
                 }
                 activityCell.dataset.syncStatus = 'pending';
                 newRow.appendChild(timeCell);
@@ -1898,6 +1984,11 @@
                             item.diaSemana = parseInt(activityCell.dataset.diaSemana) || 0;
                         }
                     }
+                    // Guarda os dias da semana em que a atividade foi marcada
+                    const daysAttr = activityCell.dataset.days;
+                    if (daysAttr) {
+                        item.days = JSON.parse(daysAttr);
+                    }
                     activities.push(item);
                 }
             });
@@ -1950,6 +2041,9 @@
                             activityCell.dataset.ocorrencia = item.ocorrencia || 1;
                             activityCell.dataset.diaSemana = item.diaSemana || 0;
                         }
+                    }
+                    if (item.days) {
+                        activityCell.dataset.days = JSON.stringify(item.days);
                     }
                     row.appendChild(timeCell);
                     row.appendChild(activityCell);
@@ -2093,6 +2187,7 @@
     };
 
     function loadRoutineModel() {
+        console.log('Carregar modelo acionado');
         if (isSyncing) { alert('⚠️ Aguarde a sincronização atual.'); return; }
         if (!confirm('⚠️ Substituir atividades pelo modelo padrão?')) return;
         const days = ['segunda','terca','quarta','quinta','sexta','sabado','domingo'];
@@ -2152,9 +2247,10 @@
         const token = getValidToken();
         if (!token) { forceReauth(); return; }
 
+        // Define período: 1º dia do mês atual até último dia do mês seguinte
         const now = new Date();
-        const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
+        const startDate = new Date(now.getFullYear(), now.getMonth(), 1); // 1º dia do mês atual
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59); // último dia do mês seguinte
 
         const totalAtividades = document.querySelectorAll('.activity-cell').length;
         if (totalAtividades > 0) {
@@ -2257,7 +2353,7 @@
     }
 
     // ===================================================================
-    // DESSINCRONIZAR – APAGA TODOS OS EVENTOS DO PERÍODO (com barra de progresso)
+    // DESSINCRONIZAR COM BARRA DE PROGRESSO
     // ===================================================================
     async function desyncNow() {
         if (isSyncing) { alert('⚠️ Aguarde a sincronização.'); return; }
@@ -2291,11 +2387,10 @@
                 return;
             }
 
-            let deletedCount = 0;
             const total = data.items.length;
-            let processed = 0;
-
-            for (let ev of data.items) {
+            let deletedCount = 0;
+            for (let i = 0; i < total; i++) {
+                const ev = data.items[i];
                 try {
                     const delRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${ev.id}`, {
                         method: 'DELETE',
@@ -2306,8 +2401,8 @@
                 } catch (err) {
                     if (err.message === '401') { forceReauth(); hideProgress(); isSyncing = false; setButtonsEnabled(true); return; }
                 }
-                processed++;
-                updateProgress(processed, total);
+                // Atualiza a barra de progresso
+                updateProgress(i + 1, total);
             }
 
             markAllActivitiesAsPending();
